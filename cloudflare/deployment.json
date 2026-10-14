@@ -9,11 +9,11 @@
   "cron": "*/15 * * * *",
   "current": {
     "date": "2026-10-14",
-    "commit": "edcd9a4",
+    "commit": "0000592",
     "deployed_with": "wrangler deploy",
-    "deployment_id": "913c2e81-8010-4b8e-8f1c-f2d6600ff6bb",
-    "version_id": "f6564a57-24ec-4228-ba29-84a5c671b532",
-    "worker_sha256": "c95356b7b3a6d7d253542be1c7300df1f2eadbf397f94629ab9d5b7c2aac6b18",
+    "deployment_id": "59ff2ce4-835e-47cb-ad6a-7bd4e5946e10",
+    "version_id": "33d9b0fb-e684-4856-913b-44d161eaec82",
+    "worker_sha256": "829098ba4e081f19899983a9a8bff5e6ffc0b63068dd3f6eb65be384b91f07fa",
     "migrations_applied": [
       "0001_pastes.sql",
       "0002_admin.sql"
@@ -34,11 +34,12 @@
       "access_app_id": "ef1f45b3-52a8-43ab-a2e1-ea6fa75e526c",
       "access_app_name": "Paste admin",
       "access_policy": "Paste administrators (allow; same administrator emails as ip.bea.sh)",
-      "note": "Issuer, audience, and administrator emails are Worker secrets and are not recorded here."
+      "note": "Issuer, audience, and administrator emails are Worker secrets and are not recorded here.",
+      "token_sign_in": "available in the code but disabled here: PASTE_ADMIN_TOKEN is not set, so Cloudflare Access is the only sign-in"
     },
     "verification": {
       "local_tests": {
-        "worker": 19,
+        "worker_and_server": 25,
         "rust": 46
       },
       "production_smoke": "passed",
@@ -47,7 +48,8 @@
         "workers.dev /admin returns 403 without a token and with a forged token"
       ],
       "paste_metadata": "new paste recorded size, client, country, creator IP, and 30-day TTL; test paste deleted",
-      "signed_in_dashboard": "confirmed by the administrator on production after Cloudflare Access sign-in"
+      "signed_in_dashboard": "confirmed by the administrator on production after Cloudflare Access sign-in",
+      "container": "image built and smoke-tested locally (read-only root, dropped capabilities, restart persistence, admin token sign-in); Helm chart linted and validated with kubeconform"
     }
   },
   "initial_deployment": {
