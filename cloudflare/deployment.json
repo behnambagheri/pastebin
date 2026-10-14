@@ -9,11 +9,11 @@
   "cron": "*/15 * * * *",
   "current": {
     "date": "2026-10-14",
-    "commit": "39edc66",
+    "commit": "see git log: admin paste-list refinements",
     "deployed_with": "wrangler deploy",
-    "deployment_id": "ef721ad1-e2cd-4ef7-8031-a7d4539ff81d",
-    "version_id": "688e1a6a-ec64-4231-8969-34086855541f",
-    "worker_sha256": "2ddf094cfcc9d369b2bca71ade788096e0887a5116f04e0e58b8f85472cbf448",
+    "deployment_id": "913c2e81-8010-4b8e-8f1c-f2d6600ff6bb",
+    "version_id": "f6564a57-24ec-4228-ba29-84a5c671b532",
+    "worker_sha256": "c95356b7b3a6d7d253542be1c7300df1f2eadbf397f94629ab9d5b7c2aac6b18",
     "migrations_applied": [
       "0001_pastes.sql",
       "0002_admin.sql"
@@ -47,7 +47,7 @@
         "workers.dev /admin returns 403 without a token and with a forged token"
       ],
       "paste_metadata": "new paste recorded size, client, country, creator IP, and 30-day TTL; test paste deleted",
-      "signed_in_dashboard": "verified locally with a stubbed sign-in; production sign-in to be confirmed by the administrator"
+      "signed_in_dashboard": "confirmed by the administrator on production after Cloudflare Access sign-in"
     }
   },
   "initial_deployment": {

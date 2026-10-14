@@ -277,6 +277,36 @@
           if (state.query) params.set("q", state.query);
           return api("/admin/api/pastes?" + params).then(renderPastes).catch(function (e) { showError(e.message); });
         }
+        var ICONS = {
+          copy: '<rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />',
+          check: '<path d="m5 12 5 5L20 7" />',
+          x: '<path d="M6 6l12 12M18 6 6 18" />',
+          trash: '<path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />',
+        };
+        function setIcon(button, name) {
+          button.querySelector("svg").innerHTML = ICONS[name];
+        }
+        // Icon-only buttons keep the table narrow; the label is exposed to screen readers and as a tooltip.
+        function iconButton(name, label, extra) {
+          var button = el("button", "btn btn-ghost btn-xs btn-square " + extra);
+          button.type = "button";
+          button.title = label;
+          button.setAttribute("aria-label", label);
+          button.innerHTML = '<svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></svg>';
+          setIcon(button, name);
+          return button;
+        }
+        function flash(button, name, label) {
+          var original = button.title;
+          setIcon(button, name);
+          button.title = label;
+          button.classList.add(name === "check" ? "text-success" : "text-error");
+          setTimeout(function () {
+            setIcon(button, "copy");
+            button.title = original;
+            button.classList.remove("text-success", "text-error");
+          }, 1200);
+        }
         function badge(text, cls) { return el("span", "badge badge-sm " + cls, text); }
         function renderPastes(data) {
           state.total = data.total;
@@ -291,7 +321,19 @@
             rows.appendChild(empty);
           }
           data.pastes.forEach(function (paste) {
-            var row = el("tr", "hover:bg-base-200/60");
+            // The whole row opens the preview; buttons inside it keep their own actions.
+            var row = el("tr", "cursor-pointer hover:bg-base-200/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary");
+            row.tabIndex = 0;
+            row.title = "Preview this paste";
+            row.addEventListener("click", function (event) {
+              if (!event.target.closest("button, a")) preview(paste);
+            });
+            row.addEventListener("keydown", function (event) {
+              if (event.target === row && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                preview(paste);
+              }
+            });
             var idCell = el("td");
             var idLine = el("div", "flex flex-wrap items-center gap-1.5");
             idLine.appendChild(el("span", "font-mono text-xs", paste.id));
@@ -303,31 +345,44 @@
             row.appendChild(el("td", "whitespace-nowrap text-xs", when(paste.created_at)));
             row.appendChild(el("td", "whitespace-nowrap text-xs", paste.expires_at ? when(paste.expires_at) : "Never"));
             row.appendChild(el("td", "whitespace-nowrap text-right font-mono text-xs", bytes(paste.size)));
-            var ipCell = el("td", "whitespace-nowrap");
+            // IPv6 addresses wrap inside a fixed width instead of widening the table.
+            var ipCell = el("td", "w-44 max-w-44");
             if (paste.creator_ip) {
-              var ipButton = el("button", "link link-hover font-mono text-xs", paste.creator_ip);
+              var ipLine = el("div", "flex flex-wrap items-baseline gap-x-1.5");
+              var ipButton = el("button", "link link-hover text-left font-mono text-xs");
+              // Allow line breaks only after colons so IPv6 groups stay whole.
+              paste.creator_ip.split(":").forEach(function (part, index, parts) {
+                ipButton.append(part + (index < parts.length - 1 ? ":" : ""));
+                if (index < parts.length - 1) ipButton.appendChild(document.createElement("wbr"));
+              });
               ipButton.type = "button";
               ipButton.title = "Show all pastes from this IP";
               ipButton.addEventListener("click", function () { search(paste.creator_ip); });
-              ipCell.appendChild(ipButton);
-              if (paste.country) ipCell.appendChild(el("span", "ml-1.5 text-xs text-base-content/50", paste.country));
+              ipLine.appendChild(ipButton);
+              if (paste.country) ipLine.appendChild(el("span", "text-xs text-base-content/50", paste.country));
+              ipCell.appendChild(ipLine);
             } else {
               ipCell.appendChild(el("span", "text-xs text-base-content/40", "Not recorded"));
             }
             row.appendChild(ipCell);
-            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.client === "web" ? "Web" : paste.client === "cli" ? "Command line" : "—"));
+            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.client === "web" ? "Web" : paste.client === "cli" ? "CLI" : "—"));
             var actions = el("td", "whitespace-nowrap text-right");
-            var view = el("button", "btn btn-ghost btn-xs", "Preview");
-            view.type = "button";
-            view.addEventListener("click", function () { preview(paste); });
-            var remove = el("button", "btn btn-ghost btn-xs text-error", "Delete");
-            remove.type = "button";
+            var link = location.origin + "/" + paste.id;
+            var copy = iconButton("copy", "Copy link", "");
+            copy.addEventListener("click", function () {
+              navigator.clipboard.writeText(link).then(function () {
+                flash(copy, "check", "Copied " + link);
+              }, function () {
+                flash(copy, "x", "Copy failed");
+              });
+            });
+            var remove = iconButton("trash", "Delete paste", "text-error");
             remove.addEventListener("click", function () {
               confirmAction("Delete this paste?", paste.id + " will be removed permanently.", function () {
                 return api("/admin/api/pastes/" + encodeURIComponent(paste.id), { method: "DELETE" }).then(loadPastes);
               });
             });
-            actions.append(view, remove);
+            actions.append(copy, remove);
             row.appendChild(actions);
             rows.appendChild(row);
           });
