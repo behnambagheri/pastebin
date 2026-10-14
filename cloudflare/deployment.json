@@ -9,7 +9,7 @@
   "cron": "*/15 * * * *",
   "current": {
     "date": "2026-10-14",
-    "commit": "see git log: admin paste-list refinements",
+    "commit": "edcd9a4",
     "deployed_with": "wrangler deploy",
     "deployment_id": "913c2e81-8010-4b8e-8f1c-f2d6600ff6bb",
     "version_id": "f6564a57-24ec-4228-ba29-84a5c671b532",
