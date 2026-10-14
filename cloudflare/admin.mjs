@@ -3,9 +3,11 @@ import { TOKEN_IDENTITY, adminToken, checkToken, clearedCookie, sessionCookie, t
 import * as settings from "./settings.mjs";
 import adminPage, { loginPage } from "./generated/admin-page.mjs";
 
+// "same-origin", not "no-referrer": under "no-referrer" browsers send `Origin: null` on the
+// login form's POST, which the same-origin check below would refuse.
 const headers = {
   "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
-  "Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow, noarchive",
+  "Referrer-Policy": "same-origin", "X-Robots-Tag": "noindex, nofollow, noarchive",
   "Content-Security-Policy": "default-src 'none'; style-src 'self'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
 };
 const LOGIN_FAILED = '<div role="alert" class="alert alert-soft alert-error text-sm">That token is not valid.</div>';

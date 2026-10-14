@@ -75,7 +75,10 @@ test("the admin token signs in through the login page or as a bearer token", asy
     assert.equal(signedOut.status, 303);
     assert.equal(signedOut.headers.get("location"), "/admin/login");
     assert.equal((await fetch(`${base}/admin/api/pastes`)).status, 403);
-    assert.match(await (await fetch(`${base}/admin/login`)).text(), /name="token"/);
+    const loginPage = await fetch(`${base}/admin/login`);
+    assert.match(await loginPage.text(), /name="token"/);
+    // Browsers send `Origin: null` on form posts from a "no-referrer" page, which the origin check refuses.
+    assert.equal(loginPage.headers.get("referrer-policy"), "same-origin");
 
     const form = (token) => new URLSearchParams({ token });
     const wrong = await fetch(`${base}/admin/login`, { method: "POST", body: form("not-the-token"), headers: origin });
