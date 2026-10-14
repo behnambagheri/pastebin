@@ -300,7 +300,6 @@ async fn view_paste<'r>(
         map["msg"] = json!("FOR YOUR EYES ONLY. The paste is gone, after you close this window.");
         map["level"] = json!("warning");
         map["is_burned"] = json!("true");
-        map["glyph"] = json!("fa fa-fire");
     } else if entry.expiry_timestamp() != 0 {
         let time = DateTime::from_timestamp(entry.expiry_timestamp() as i64, 0)
             .unwrap()
@@ -308,7 +307,6 @@ async fn view_paste<'r>(
             .format("%Y-%m-%d %H:%M:%S");
         map["msg"] = json!(format!("This paste will expire on {time}."));
         map["level"] = json!("info");
-        map["glyph"] = json!("far fa-clock");
     }
 
     if entry.encrypted() {

@@ -8,22 +8,13 @@ pub fn new(plugins: Vec<Box<dyn plugin::Plugin>>) -> plugin::PluginManager {
     let base_static_resources = load_static_resources!(
     "/static/index.html" => "../static/index.html",
     "/static/custom.js" => "../static/custom.js",
-    "/static/custom.css" => "../static/custom.css",
+    "/static/style.css" => "../static/style.css",
     "/static/favicon.ico" => "../static/favicon.ico"
     );
 
-    let base_css_imports = vec![
-        "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css",
-        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css",
-        "/static/custom.css",
-    ];
+    let base_css_imports = vec!["/static/style.css"];
 
-    let base_js_imports = vec![
-        "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/js/bootstrap.min.js",
-        "/static/custom.js",
-    ];
+    let base_js_imports = vec!["/static/custom.js"];
 
     plugin::PluginManager::build()
         .plugins(plugins)

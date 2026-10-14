@@ -3,8 +3,10 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import Handlebars from "handlebars";
 import { build } from "esbuild";
+import { buildCss } from "./build-css.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
+await buildCss();
 await mkdir(path.join(root, "generated"), { recursive: true });
 const template = await readFile(path.join(root, "../static/index.html"), "utf8");
 // Translate the Rust Handlebars conditional into JavaScript Handlebars syntax.
@@ -25,4 +27,4 @@ await build({
   target: "es2022",
   minify: true,
 });
-console.log("Built Worker with the existing UI template and static assets.");
+console.log("Built Worker with the daisyUI template and static assets.");

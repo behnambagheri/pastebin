@@ -11,10 +11,15 @@ D1 database: `bea-paste` (`5f9c3b97-8860-46d1-941f-1be63b59b9f5`)
 ## Architecture
 
 This is an additional serverless backend for the existing project. The original
-Rust/RocksDB server and Docker builds remain available. The Worker uses the
-existing `static/index.html`, CSS, JavaScript, favicon, and Prism assets without
-changing their source files. Handlebars templates are precompiled at build time;
-the Worker embeds the static assets, like the Rust binary does.
+Rust/RocksDB server and Docker builds remain available and share the same
+`static/` frontend. Handlebars templates are precompiled at build time; the
+Worker embeds the static assets, like the Rust binary does.
+
+The UI uses daisyUI 5 on Tailwind CSS 4 with the shared `bea` / `bea-dark`
+themes from ip.bea.sh, so it matches bea.sh. `style.css` here is the Tailwind
+source; `npm run build:css` (also part of `npm run build`) compiles it to
+`static/style.css`, which is committed so the Rust build needs no Node.js.
+There are no CDN dependencies: no Bootstrap, jQuery, or Font Awesome.
 
 D1 holds paste metadata and base64 content chunks. Chunking preserves the
 original 8 MiB body limit within D1's 2 MB row limit. Creation uses one transaction.
@@ -26,7 +31,7 @@ every 15 minutes. Foreign keys cascade deletion to the content chunks.
 The API supports `POST /`, `GET /:id`, `GET /raw/:id`, `GET /download/:id`,
 `GET /new?id=:id`, `GET /static/:resource`, and `DELETE /:id`. Paste responses
 disable caching. Client-side AES-GCM encryption, password prompts, highlighting,
-clone/delete actions, and dark mode use the existing frontend code.
+clone/delete actions, and the system/light/dark theme switch run in vanilla JavaScript.
 
 The Rust implementation's default TTL is zero (Never), which is also the Worker
 default. Query parameters accept `ttl` seconds and `burn`/`encrypted` booleans;

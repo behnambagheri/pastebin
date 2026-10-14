@@ -133,18 +133,9 @@ function page(env, values = {}, status = 200) {
   const data = {
     version: "0.2.0", uri_prefix: "", ui_expiry_times: options,
     ui_expiry_default: options.find(([, seconds]) => seconds === defaultTtl)[0],
-    css_imports: [
-      "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css",
-      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css",
-      "/static/custom.css", "/static/prism.css",
-    ],
-    js_imports: [
-      "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/js/bootstrap.min.js",
-      "/static/custom.js", "/static/prism.js",
-    ],
-    js_init: ["var holder = $('#pastebin-code-block:first').get(0); if (holder) { Prism.highlightElement(holder); }"],
+    css_imports: ["/static/style.css", "/static/prism.css"],
+    js_imports: ["/static/custom.js", "/static/prism.js"],
+    js_init: ["var holder = document.getElementById('pastebin-code-block'); if (holder) { Prism.highlightElement(holder); }"],
     ...values,
   };
   if (env.ENABLE_MERMAID === "true") {

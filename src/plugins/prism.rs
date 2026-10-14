@@ -7,7 +7,7 @@ pub fn new() -> PastebinPlugin {
         css_imports: vec!["/static/prism.css"],
         js_imports: vec!["/static/prism.js"],
         js_init: Some(
-            "var holder = $('#pastebin-code-block:first').get(0); \
+            "var holder = document.getElementById('pastebin-code-block'); \
             if (holder) { Prism.highlightElement(holder); }",
         ),
         static_resources: load_static_resources! {

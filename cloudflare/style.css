@@ -1,0 +1,124 @@
+/* Source for static/style.css. Rebuild with `npm run build:css`. */
+@import "tailwindcss" source(none);
+@source "../static/index.html";
+@source "../static/custom.js";
+/* Alert levels arrive at runtime from the server and query string. */
+@source inline("alert-success alert-info alert-warning alert-error");
+@plugin "daisyui" {
+  themes: false;
+  logs: false;
+}
+
+/* Shared bea.sh palette, kept in sync with ip.bea.sh. */
+@plugin "daisyui/theme" {
+  name: "bea";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f8fafc;
+  --color-base-300: #e5e7eb;
+  --color-base-content: #101114;
+  --color-primary: #2563eb;
+  --color-primary-content: #ffffff;
+  --color-secondary: #5794ff;
+  --color-secondary-content: #101114;
+  --color-accent: #337dff;
+  --color-accent-content: #ffffff;
+  --color-neutral: #20232a;
+  --color-neutral-content: #ffffff;
+  --color-info: #2563eb;
+  --color-info-content: #ffffff;
+  --color-success: #087443;
+  --color-success-content: #ffffff;
+  --color-warning: #f1c04b;
+  --color-warning-content: #101114;
+  --color-error: #bc273e;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+@plugin "daisyui/theme" {
+  name: "bea-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: #151820;
+  --color-base-200: #0c0f16;
+  --color-base-300: #2c3340;
+  --color-base-content: #e9edf5;
+  --color-primary: #7da5ff;
+  --color-primary-content: #061734;
+  --color-secondary: #5794ff;
+  --color-secondary-content: #061734;
+  --color-accent: #71abff;
+  --color-accent-content: #061734;
+  --color-neutral: #303847;
+  --color-neutral-content: #e9edf5;
+  --color-info: #7da5ff;
+  --color-info-content: #061734;
+  --color-success: #62d9a0;
+  --color-success-content: #062e1b;
+  --color-warning: #f1c04b;
+  --color-warning-content: #101114;
+  --color-error: #ff8498;
+  --color-error-content: #410817;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Match the subtle background grid and blue glow on bea.sh. */
+@layer base {
+  body {
+    background-image: radial-gradient(ellipse at 8% 0%, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 45%), linear-gradient(color-mix(in oklab, var(--color-base-content) 3%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--color-base-content) 3%, transparent) 1px, transparent 1px);
+    background-size: auto, 72px 72px, 72px 72px;
+    background-attachment: fixed;
+  }
+}
+
+/* Fit the Prism Coy theme into the daisyUI card instead of its paper look. */
+#paste-view pre[class*="language-"] {
+  margin: 0;
+  background: transparent;
+}
+#paste-view pre[class*="language-"]::before,
+#paste-view pre[class*="language-"]::after {
+  display: none;
+}
+#paste-view pre[class*="language-"] > code {
+  padding: 1rem;
+  border-left: 3px solid var(--color-primary);
+  box-shadow: none;
+  background-color: var(--color-base-100);
+  background-image: none;
+  color: var(--color-base-content);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+/* Dark syntax colors, scoped to the bea-dark theme. */
+[data-theme="bea-dark"] {
+  & .token.comment, & .token.prolog, & .token.doctype, & .token.cdata { color: #7f8ba3; }
+  & .token.punctuation { color: #c3cad8; }
+  & .token.property, & .token.tag, & .token.boolean, & .token.number,
+  & .token.constant, & .token.symbol, & .token.deleted { color: #ff8498; }
+  & .token.selector, & .token.attr-name, & .token.string, & .token.char,
+  & .token.builtin, & .token.inserted { color: #62d9a0; }
+  & .token.operator, & .token.entity, & .token.url,
+  & .language-css .token.string, & .style .token.string { color: #c3cad8; background: none; }
+  & .token.atrule, & .token.attr-value, & .token.keyword { color: #7da5ff; }
+  & .token.function, & .token.class-name { color: #f1c04b; }
+  & .token.regex, & .token.important, & .token.variable { color: #71abff; }
+}

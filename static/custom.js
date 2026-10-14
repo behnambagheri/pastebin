@@ -56,219 +56,227 @@ async function cryptoDecrypt(ciphertextB64, password) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-$(document).ready(function() {
-    // ── Dark mode toggle ──────────────────────────────────────────────────────
-    function isDark() {
-        var theme = document.documentElement.getAttribute('data-theme');
-        if (theme === 'dark') return true;
-        if (theme === 'light') return false;
-        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+(function () {
+    "use strict";
+
+    function byId(id) { return document.getElementById(id); }
+
+    function withParams(path, params) {
+        var query = Object.keys(params).map(function (key) {
+            return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+        }).join("&");
+        return path + (path.indexOf("?") >= 0 ? "&" : "?") + query;
     }
 
-    function applyTheme(dark) {
-        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-        $('#theme-toggle i').toggleClass('fa-moon', !dark).toggleClass('fa-sun', dark);
-    }
+    // ── Theme: system / light / dark, shared with the bea.sh family ──────────
+    function initTheme() {
+        var root = document.documentElement;
+        var system = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+        var buttons = document.querySelectorAll("button[data-theme-preference]");
+        var preference = root.getAttribute("data-theme-preference") || "system";
 
-    applyTheme(isDark());
-
-    $('#theme-toggle').on('click', function () {
-        var dark = !isDark();
-        localStorage.setItem('theme', dark ? 'dark' : 'light');
-        applyTheme(dark);
-        if (typeof Prism !== 'undefined') {
-            Prism.highlightAll();
+        function apply() {
+            var dark = preference === "dark" || (preference === "system" && system && system.matches);
+            root.setAttribute("data-theme", dark ? "bea-dark" : "bea");
+            root.setAttribute("data-theme-preference", preference);
+            buttons.forEach(function (button) {
+                var selected = button.getAttribute("data-theme-preference") === preference;
+                button.setAttribute("aria-pressed", String(selected));
+                button.classList.toggle("btn-active", selected);
+            });
         }
-    });
 
-    // Re-sync icon if OS preference changes while the page is open.
-    if (window.matchMedia) {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-            if (!localStorage.getItem('theme')) {
-                applyTheme(isDark());
-            }
+        buttons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                preference = button.getAttribute("data-theme-preference");
+                try {
+                    localStorage.setItem("paste-theme", preference);
+                } catch (e) {
+                    // The theme still applies to this page when storage is unavailable.
+                }
+                apply();
+            });
         });
-    }
-    // ─────────────────────────────────────────────────────────────────────────
-
-    function replaceUrlParam(url, param, value) {
-        if (value == null) {
-            value = '';
+        if (system) {
+            system.addEventListener("change", function () {
+                if (preference === "system") apply();
+            });
         }
-
-        var pattern = new RegExp('\\b('+param+'=).*?(&|#|$)');
-        if (url.search(pattern)>=0) {
-            return url.replace(pattern,'$1' + value + '$2');
-        }
-
-        url = url.replace(/[?#]$/,'');
-        return url + (url.indexOf('?')>0 ? '&' : '?') + param + '=' + value;
+        apply();
     }
 
-    function resetLanguageSelector() {
-        var url = new URL(document.location);
-        var params = url.searchParams;
-        var lang = params.get("lang");
+    function init() {
+        initTheme();
 
-        if (lang != null) {
-            $("#language-selector").val(lang);
-        } else {
-            if($("#pastebin-code-block").length) {
-                $("#language-selector").val(
-                    $("#pastebin-code-block").prop("class").trim().split('-')[1]
-                );
-            }
+        var codeBlock = byId("pastebin-code-block");
+        var textarea = byId("content-textarea");
+        var languageSelector = byId("language-selector");
+        var expirySelector = byId("expiry-selector");
+        var burnSelector = byId("burn-selector");
+        var sendButton = byId("send-btn");
+        var sendStatus = byId("send-status");
+
+        var noticeClose = byId("notice-close");
+        if (noticeClose) {
+            noticeClose.addEventListener("click", function () { byId("notice").remove(); });
         }
-    }
 
-    function getDefaultExpiryTime() {
-        var expiry = $("#expiry-dropdown-btn").text().split("Expires: ")[1];
-        return $("#expiry-dropdown a:contains('"+ expiry +"')").attr('href');
-    }
-
-    function checkPasswordModal() {
-        if ($("#password-modal").length) {
-            $('#password-modal').modal('toggle');
+        // Reflect the requested or detected language in the selector.
+        var lang = new URL(document.location).searchParams.get("lang");
+        if (lang == null && codeBlock) {
+            lang = codeBlock.className.trim().split("-")[1];
         }
-    }
-
-    resetLanguageSelector();
-    checkPasswordModal();
-    init_plugins();
-
-    var state = {
-        expiry: getDefaultExpiryTime(),
-        burn: 0,
-    };
-
-    $("#language-selector").change(function() {
-        if ($("#pastebin-code-block").length) {
-            $('#pastebin-code-block').attr('class', 'language-' + $("#language-selector").val());
-            init_plugins();
+        if (lang != null && languageSelector) {
+            languageSelector.value = lang;
         }
-    });
 
-    $("#remove-btn").on("click", function(event) {
-        event.preventDefault();
-        $('#deletion-modal').modal('show');
-    });
+        if (expirySelector) {
+            var expiryDefault = expirySelector.getAttribute("data-default");
+            Array.prototype.forEach.call(expirySelector.options, function (option) {
+                if (option.textContent === expiryDefault) option.selected = true;
+            });
+        }
 
-    $("#deletion-confirm-btn").on("click", function(event) {
-        event.preventDefault();
+        init_plugins();
 
-        $.ajax({
-            url: window.location.pathname,
-            type: 'DELETE',
-            success: function(result) {
-                uri = uri_prefix + "/new";
-                uri = replaceUrlParam(uri, 'level', "info");
-                uri = replaceUrlParam(uri, 'glyph', "fas fa-info-circle");
-                uri = replaceUrlParam(uri, 'msg', "The paste has been successfully removed.");
-                window.location.href = encodeURI(uri);
-            }
-        });
-    });
-
-    $("#copy-btn").on("click", function(event) {
-        event.preventDefault();
-
-        var $this = $(this);
-        var text = $("#pastebin-code-block").text();
-
-        navigator.clipboard.writeText(text).then(function() {
-            $this.text("Copied!");
-            $this.attr("disabled", "disabled");
-
-            setTimeout(function() {
-                $this.text("Copy");
-                $this.removeAttr("disabled");
-            }, 800);
-        });
-    });
-
-    $("#send-btn").on("click", function(event) {
-        event.preventDefault();
-
-        var uri = uri_prefix == "" ? "/" : uri_prefix;
-        uri = replaceUrlParam(uri, 'lang', $("#language-selector").val());
-        uri = replaceUrlParam(uri, 'ttl', state.expiry);
-        uri = replaceUrlParam(uri, 'burn', state.burn);
-
-        var data = $("#content-textarea").val();
-        var pass = $("#pastebin-password").val();
-
-        function doPost(payload) {
-            $.ajax({
-                url: uri,
-                type: 'POST',
-                data: payload,
-                contentType: 'test/plain',
-                success: function(result) {
-                    var dest = uri_prefix + "/new";
-                    dest = replaceUrlParam(dest, 'level', "success");
-                    dest = replaceUrlParam(dest, 'glyph', "fas fa-check");
-                    dest = replaceUrlParam(dest, 'msg', "The paste has been successfully created:");
-                    dest = replaceUrlParam(dest, 'url', result);
-                    window.location.href = encodeURI(dest);
+        if (languageSelector) {
+            languageSelector.addEventListener("change", function () {
+                if (codeBlock) {
+                    codeBlock.className = "language-" + languageSelector.value;
+                    init_plugins();
                 }
             });
         }
 
-        if (pass.length > 0) {
-            cryptoEncrypt(data, pass).then(function(encrypted) {
-                uri = replaceUrlParam(uri, 'encrypted', true);
-                doPost(encrypted);
+        // ── Copy ─────────────────────────────────────────────────────────────
+        var copyButton = byId("copy-btn");
+        if (copyButton) {
+            copyButton.addEventListener("click", function () {
+                navigator.clipboard.writeText(codeBlock.textContent).then(function () {
+                    copyButton.textContent = "Copied!";
+                    copyButton.disabled = true;
+                    setTimeout(function () {
+                        copyButton.textContent = "Copy";
+                        copyButton.disabled = false;
+                    }, 800);
+                });
             });
-        } else {
-            doPost(data);
-        }
-    });
-
-    $('#expiry-dropdown a').click(function(event){
-        event.preventDefault();
-
-        state.expiry = $(this).attr("href");
-        $('#expiry-dropdown-btn').text("Expires: " + this.innerHTML);
-    });
-
-    $('#burn-dropdown a').click(function(event){
-        event.preventDefault();
-
-        state.burn = $(this).attr("href");
-        $('#burn-dropdown-btn').text("Burn: " + this.innerHTML);
-    });
-
-    $('#password-modal').on('shown.bs.modal', function () {
-        $('#modal-password').trigger('focus');
-    })
-
-    $('#password-modal form').submit(function(event) {
-        event.preventDefault();
-        $('#decrypt-btn').click();
-    });
-
-    $('#decrypt-btn').click(function(event) {
-        var pass = $("#modal-password").val();
-        var data = "";
-
-        if ($("#pastebin-code-block").length) {
-            data = $("#pastebin-code-block").text();
-        } else {
-            data = $("#content-textarea").text();
         }
 
-        cryptoDecrypt(data, pass).then(function(decrypted) {
-            if ($("#pastebin-code-block").length) {
-                $("#pastebin-code-block").text(decrypted);
-                init_plugins();
-            } else {
-                $("#content-textarea").text(decrypted);
+        // ── Remove ───────────────────────────────────────────────────────────
+        var deletionModal = byId("deletion-modal");
+        var removeButton = byId("remove-btn");
+        if (removeButton && deletionModal) {
+            removeButton.addEventListener("click", function () { deletionModal.showModal(); });
+            byId("deletion-confirm-btn").addEventListener("click", function () {
+                var confirmButton = this;
+                confirmButton.disabled = true;
+                fetch(window.location.pathname, { method: "DELETE" }).then(function (response) {
+                    if (!response.ok) throw new Error(response.statusText);
+                    window.location.href = withParams(uri_prefix + "/new", {
+                        level: "info",
+                        msg: "The paste has been successfully removed.",
+                    });
+                }).catch(function () {
+                    confirmButton.disabled = false;
+                    confirmButton.textContent = "Retry";
+                });
+            });
+        }
+
+        // ── Create ───────────────────────────────────────────────────────────
+        function send() {
+            if (!sendButton || sendButton.disabled) return;
+            var data = textarea.value;
+            if (data.length === 0) {
+                sendStatus.textContent = "Nothing to paste yet.";
+                textarea.focus();
+                return;
             }
 
-            $("#modal-close-btn").click();
-            $("#modal-alert").alert('close');
-        }).catch(function() {
-            $("#modal-alert").removeClass("collapse");
-        });
-    });
-});
+            var params = {
+                lang: languageSelector.value,
+                ttl: expirySelector.value,
+                burn: burnSelector.value,
+            };
+            var pass = byId("pastebin-password").value;
+
+            sendButton.disabled = true;
+            sendStatus.textContent = pass.length > 0 ? "Encrypting…" : "Uploading…";
+
+            var payload = pass.length > 0
+                ? cryptoEncrypt(data, pass).then(function (encrypted) {
+                    params.encrypted = true;
+                    return encrypted;
+                })
+                : Promise.resolve(data);
+
+            payload.then(function (body) {
+                return fetch(withParams(uri_prefix === "" ? "/" : uri_prefix, params), {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain" },
+                    body: body,
+                });
+            }).then(function (response) {
+                return response.text().then(function (text) {
+                    if (!response.ok) throw new Error(text || response.statusText);
+                    window.location.href = withParams(uri_prefix + "/new", {
+                        level: "success",
+                        msg: "The paste has been successfully created:",
+                        url: text.trim(),
+                    });
+                });
+            }).catch(function (error) {
+                sendButton.disabled = false;
+                sendStatus.textContent = "Could not create the paste: " + error.message;
+            });
+        }
+
+        if (sendButton) {
+            sendButton.addEventListener("click", send);
+            textarea.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                    event.preventDefault();
+                    send();
+                }
+            });
+        }
+
+        // ── Decrypt ──────────────────────────────────────────────────────────
+        var passwordModal = byId("password-modal");
+        if (passwordModal) {
+            var modalAlert = byId("modal-alert");
+            var modalPassword = byId("modal-password");
+            passwordModal.showModal();
+            modalPassword.focus();
+
+            byId("modal-close-btn").addEventListener("click", function () { passwordModal.close(); });
+            byId("password-form").addEventListener("submit", function (event) {
+                event.preventDefault();
+                var data = codeBlock ? codeBlock.textContent : textarea.value;
+
+                cryptoDecrypt(data, modalPassword.value).then(function (decrypted) {
+                    if (codeBlock) {
+                        codeBlock.textContent = decrypted;
+                        init_plugins();
+                    } else {
+                        textarea.value = decrypted;
+                    }
+                    modalAlert.classList.add("hidden");
+                    passwordModal.close();
+                }).catch(function () {
+                    modalAlert.classList.remove("hidden");
+                    modalPassword.select();
+                });
+            });
+        }
+    }
+
+    if (typeof document.addEventListener === "function") {
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            init();
+        }
+    }
+})();

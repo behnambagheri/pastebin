@@ -28,14 +28,16 @@ async function create(body, query = "") {
   return url.pathname.slice(1);
 }
 
-test("existing UI renders, static resources load, and errors use the UI", async () => {
+test("daisyUI page renders, static resources load, and errors use the UI", async () => {
   const root = await request("/", { redirect: "manual" });
   assert.equal(root.status, 303);
   assert.equal(root.headers.get("location"), "/new");
   const page = await request("/new");
   const html = await page.text();
   assert.match(html, /id="content-textarea"/);
-  assert.match(html, /Expires: Never/);
+  assert.match(html, /id="expiry-selector"[^>]*data-default="Never"/);
+  assert.match(html, /href="\/static\/style.css"/);
+  assert.ok(!/cdnjs|jquery|bootstrap/i.test(html));
   assert.ok(!html.includes("{{"));
   const js = await request("/static/custom.js");
   assert.equal(await js.text(), await readFile(new URL("../../static/custom.js", import.meta.url), "utf8"));

@@ -47,7 +47,7 @@ Rust-based pastebin with [RocksDB](https://rocksdb.org/) as storage. Notable imp
 * **REST API** — add/delete pastes via any HTTP client (see [API.md](https://github.com/mkaczanowski/pastebin/blob/master/API.md))
 * **[RocksDB compaction filter](https://github.com/facebook/rocksdb/wiki/Compaction-Filter)** — expired pastes are automatically removed at compaction time
 * **[FlatBuffers](https://google.github.io/flatbuffers/)** — paste data serialized with zero-copy access
-* **UI** — plain HTML with [Bootstrap](https://getbootstrap.com/), [jQuery](https://jquery.com/), and [Prism.js](https://prismjs.com/)
+* **UI** — plain HTML styled with [daisyUI](https://daisyui.com/) on [Tailwind CSS](https://tailwindcss.com/) (prebuilt into `static/style.css` from `cloudflare/style.css`), vanilla JavaScript, and [Prism.js](https://prismjs.com/)
 * **encryption** — password-protected pastes are AES encrypted/decrypted in the browser via [CryptoJS](https://code.google.com/archive/p/crypto-js/)
 
 ### Plugins
