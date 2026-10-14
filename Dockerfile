@@ -13,6 +13,11 @@ RUN npm run build && npm test
 
 FROM node:24-alpine
 ARG BUILD_REVISION=development
+LABEL org.opencontainers.image.title="Paste" \
+      org.opencontainers.image.description="Self-hosted pastebin with client-side encryption, burn-after-reading, expiry, a curl API, and an MCP server" \
+      org.opencontainers.image.url="https://paste.bea.sh" \
+      org.opencontainers.image.source="https://github.com/behnambagheri/pastebin" \
+      org.opencontainers.image.licenses="MIT"
 ENV NODE_ENV=production BUILD_REVISION=$BUILD_REVISION \
     PASTE_LISTEN=:8080 PASTE_DATA_DIR=/var/lib/paste
 RUN mkdir -p /app /var/lib/paste && chown 10001:10001 /var/lib/paste

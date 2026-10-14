@@ -1,17 +1,30 @@
-[![Test and Build][github-workflow]][github-workflow-url]
-[![Docker Cloud Build Status][docker-cloud-build-status]][docker-hub]
-[![Docker Pulls][docker-pulls]][docker-hub]
-[![Docker Image Size][docker-size]][docker-hub]
+# Paste — self-hosted pastebin with encryption, burn-after-reading, and an MCP server
 
-[docker-hub]: https://hub.docker.com/r/mkaczanowski/pastebin
-[docker-cloud-build-status]: https://img.shields.io/docker/cloud/build/mkaczanowski/pastebin
-[docker-pulls]: https://img.shields.io/docker/pulls/mkaczanowski/pastebin
-[docker-size]: https://img.shields.io/docker/image-size/mkaczanowski/pastebin/latest
-[github-workflow]: https://github.com/mkaczanowski/pastebin/workflows/Test%20and%20Build/badge.svg
-[github-workflow-url]: https://github.com/mkaczanowski/pastebin/actions
+[![CI](https://github.com/behnambagheri/pastebin/actions/workflows/ci.yml/badge.svg)](https://github.com/behnambagheri/pastebin/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/behnambagheri/pastebin)](LICENSE)
+[![Live: paste.bea.sh](https://img.shields.io/badge/live-paste.bea.sh-2563eb)](https://paste.bea.sh)
 
-# Pastebin
-Simple, fast, standalone pastebin service.
+**Paste** is a fast, open-source pastebin for sharing code, logs, diffs, and
+secrets by link. Use it free at **[paste.bea.sh](https://paste.bea.sh)**, or
+self-host it on Cloudflare Workers, Docker, Docker Compose, or Kubernetes.
+
+- **Private by link** — no accounts, no public listing, and paste pages are never indexed.
+- **Client-side encryption** — password-protected pastes are encrypted with AES-GCM in the browser.
+- **Burn after reading** and **expiring pastes** (5 minutes to never).
+- **Syntax highlighting** with Prism.js, plus optional Mermaid diagrams.
+- **Command-line friendly** — `curl`, shell aliases (bash, zsh, fish), Python, and a plain HTTP API.
+- **AI-agent ready** — an MCP server, `llms.txt`, and an OpenAPI 3.1 description.
+- **Admin dashboard** — moderation, statistics, expiry and size limits, maintenance mode.
+- **Light and dark themes**, responsive daisyUI interface.
+
+```sh
+echo "hello world" | curl --data-binary @- https://paste.bea.sh/
+cat app.log | curl --data-binary @- "https://paste.bea.sh/?ttl=3600&burn=1"
+```
+
+Paste is a fork of [mkaczanowski/pastebin](https://github.com/mkaczanowski/pastebin)
+(Rust + RocksDB), extended with a serverless Cloudflare Workers + D1 backend, a
+Node.js container image, a Helm chart, a new interface, and AI-agent support.
 
 ## Cloudflare deployment
 
@@ -99,11 +112,11 @@ While the other implementations are great, none satisfied all of these requireme
     * mobile-friendly responsive UI
     * reverse proxy support (respects `X-Forwarded-Host`, `X-Forwarded-Proto`, `Host` headers)
 
-## Implementation
+## Implementation (original Rust server)
 Rust-based pastebin with [RocksDB](https://rocksdb.org/) as storage. Notable implementation details:
 
 * **all-in-one binary** — CSS, JS, and static assets are compiled into the binary via [`include_bytes!`](https://doc.rust-lang.org/std/macro.include_bytes.html); no external files needed at runtime
-* **REST API** — add/delete pastes via any HTTP client (see [API.md](https://github.com/mkaczanowski/pastebin/blob/master/API.md))
+* **REST API** — add/delete pastes via any HTTP client (see [API.md](API.md))
 * **[RocksDB compaction filter](https://github.com/facebook/rocksdb/wiki/Compaction-Filter)** — expired pastes are automatically removed at compaction time
 * **[FlatBuffers](https://google.github.io/flatbuffers/)** — paste data serialized with zero-copy access
 * **UI** — plain HTML styled with [daisyUI](https://daisyui.com/) on [Tailwind CSS](https://tailwindcss.com/) (prebuilt into `static/style.css` from `cloudflare/style.css`), vanilla JavaScript, and [Prism.js](https://prismjs.com/)
@@ -207,7 +220,7 @@ server {
 Setting `X-Forwarded-Host` and `X-Forwarded-Proto` ensures generated paste URLs use the correct public hostname and scheme rather than the internal listener address.
 
 ## REST API
-See [REST API doc](https://github.com/mkaczanowski/pastebin/blob/master/API.md)
+See [API.md](API.md).
 
 ## Benchmark
 I used [k6.io](https://k6.io/) for benchmarking the read-by-id HTTP endoint. Details:

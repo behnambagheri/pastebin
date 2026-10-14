@@ -11,16 +11,33 @@ export const DISCOVERY_LINK = [
   '</.well-known/api-catalog>; rel="api-catalog"',
 ].join(", ");
 
-// Paste pages are private by link: crawlers must not consume burn-after-reading pastes.
-export const ROBOTS = `User-agent: *
+// Paste pages are private by link: crawlers must not consume burn-after-reading pastes,
+// so only the editor (not /new?id=…), the guides, and the assets search engines need
+// to render the editor are crawlable.
+export function robots(origin) {
+  return `User-agent: *
 Allow: /$
-Allow: /new
-Allow: /usage
+Allow: /new$
+Allow: /usage$
 Allow: /llms.txt
 Allow: /openapi.json
 Allow: /.well-known/
+Allow: /static/
+Allow: /sitemap.xml
 Disallow: /
+
+Sitemap: ${origin}/sitemap.xml
 `;
+}
+
+export function sitemap(origin) {
+  const urls = ["/new", "/usage"].map((path) => `  <url><loc>${origin}${path}</loc></url>`).join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`;
+}
 
 export function apiCatalog(origin) {
   return {

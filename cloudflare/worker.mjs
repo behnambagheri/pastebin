@@ -2,7 +2,7 @@ import Handlebars from "handlebars/runtime.js";
 import templateSpec from "./generated/template.mjs";
 import assets, { versions } from "./generated/assets.mjs";
 import { adminResponse } from "./admin.mjs";
-import { DISCOVERY_LINK, ROBOTS, apiCatalog, mcpResponse, openApi } from "./agents.mjs";
+import { DISCOVERY_LINK, apiCatalog, mcpResponse, openApi, robots, sitemap } from "./agents.mjs";
 import * as settings from "./settings.mjs";
 
 Handlebars.registerHelper("format_url", (prefix, url) => url.startsWith("/") ? prefix + url : url);
@@ -12,6 +12,9 @@ const render = Handlebars.template(templateSpec);
 const CHUNK_BYTES = 1024 * 1024;
 const MCP_ENVELOPE_BYTES = 64 * 1024;
 const SLUG_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
+const SEO_TITLE = "Paste — Encrypted Pastebin for Code and Text | bea.sh";
+const SEO_DESCRIPTION = "Free, open-source pastebin: share code and text with syntax highlighting, " +
+  "in-browser encryption, expiry, burn-after-reading, a curl API, and an MCP server for AI agents.";
 const expiryOptions = [
   ["5 minutes", 300], ["10 minutes", 600], ["1 hour", 3600],
   ["1 day", 86400], ["1 week", 604800], ["30 days", 2592000],
@@ -193,6 +196,7 @@ async function page(env, values = {}, status = 200) {
     css_imports: ["/static/style.css", "/static/prism.css"].map(versioned),
     js_imports: ["/static/custom.js", "/static/prism.js"].map(versioned),
     js_init: ["var holder = document.getElementById('pastebin-code-block'); if (holder) { Prism.highlightElement(holder); }"],
+    noindex: true,
     ...values,
   };
   if (env.ENABLE_MERMAID === "true") {
@@ -216,11 +220,11 @@ async function limits(env) {
 }
 
 // Serves a guide from static/ with this deployment's origin and limits filled in.
-async function guide(asset, type, url, env) {
+async function guide(asset, type, url, env, headers = {}) {
   const { defaultExpiry, maxSize } = await limits(env);
   const text = new TextDecoder().decode(decode(assets[asset])).replaceAll("__BASE__", url.origin)
     .replaceAll("__DEFAULT_EXPIRY__", defaultExpiry).replaceAll("__MAX_SIZE__", maxSize);
-  return response(text, 200, type);
+  return response(text, 200, type, headers);
 }
 
 async function remove(id, env) {
@@ -239,6 +243,25 @@ async function mcp(request, env, url) {
   return mcpResponse(request, context, response);
 }
 
+// Search-engine metadata for the editor: canonical URL, social previews, and structured data.
+function search(origin) {
+  const canonical = `${origin}/new`;
+  const app = {
+    "@context": "https://schema.org", "@type": "WebApplication", name: "Paste", url: canonical,
+    description: SEO_DESCRIPTION, applicationCategory: "DeveloperApplication", operatingSystem: "Any",
+    browserRequirements: "Requires JavaScript.", isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    featureList: ["Syntax highlighting", "In-browser password encryption", "Expiring pastes",
+      "Burn after reading", "curl and HTTP API", "MCP server for AI agents"],
+    sameAs: ["https://github.com/behnambagheri/pastebin"],
+  };
+  return {
+    noindex: false, seo_title: SEO_TITLE, seo_description: SEO_DESCRIPTION, canonical_url: canonical,
+    // Escape "<" so the JSON cannot close the surrounding script element.
+    structured_data: JSON.stringify(app).replaceAll("<", "\\u003c"),
+  };
+}
+
 function missing(env) { return page(env, { is_error: true }, 404); }
 
 async function route(request, env) {
@@ -255,12 +278,15 @@ async function route(request, env) {
   }
   if (method !== "GET" && method !== "HEAD") return response("Method not allowed.", 405, undefined, { Allow: "GET, HEAD, POST, DELETE" });
   // Browsers get the editor; curl, wget, and scripts get the plain-text guide.
-  if (path === "/usage" || (path === "/" && !acceptsHtml(request))) return guide("/static/usage.txt", "text/plain; charset=utf-8", url, env);
+  if (path === "/usage") return guide("/static/usage.txt", "text/plain; charset=utf-8", url, env);
+  // "/" depends on Accept, so caches must not serve the guide to browsers or the redirect to curl.
+  if (path === "/" && !acceptsHtml(request)) return guide("/static/usage.txt", "text/plain; charset=utf-8", url, env, { Vary: "Accept" });
   if (path === "/llms.txt") return guide("/static/llms.txt", "text/markdown; charset=utf-8", url, env);
   if (path === "/openapi.json") return response(JSON.stringify(openApi(url.origin, await limits(env)), null, 2), 200, "application/vnd.oai.openapi+json", { "Access-Control-Allow-Origin": "*" });
   if (path === "/.well-known/api-catalog") return response(JSON.stringify(apiCatalog(url.origin), null, 2), 200, 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"');
-  if (path === "/robots.txt") return response(ROBOTS);
-  if (path === "/") return response(null, 303, undefined, { Location: "/new" });
+  if (path === "/robots.txt") return response(robots(url.origin));
+  if (path === "/sitemap.xml") return response(sitemap(url.origin), 200, "application/xml; charset=utf-8");
+  if (path === "/") return response(null, 303, undefined, { Location: "/new", Vary: "Accept" });
   if (path.startsWith("/static/")) {
     const asset = assets[path];
     if (!asset) return missing(env);
@@ -270,6 +296,8 @@ async function route(request, env) {
   if (path === "/new") {
     const params = url.searchParams;
     const values = { is_editable: true, level: params.get("level") || "secondary", glyph: params.get("glyph") || "", msg: params.get("msg") || "" };
+    // Only the plain editor is indexed; notices, clones, and pastes are private by link.
+    if (!url.search) Object.assign(values, search(url.origin));
     const link = params.get("url");
     if (link) {
       try {

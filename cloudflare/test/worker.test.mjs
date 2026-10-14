@@ -221,8 +221,34 @@ test("agents can discover the API through llms.txt, OpenAPI, the API catalog, an
   assert.match(await page.text(), /<link rel="service-desc"[^>]*href="\/openapi\.json"/);
   const robots = await (await request("/robots.txt")).text();
   assert.match(robots, /Allow: \/llms\.txt/);
+  assert.match(robots, /Allow: \/new\$\n/);
+  assert.match(robots, /Allow: \/static\//);
   assert.match(robots, /Disallow: \/\n/);
+  assert.match(robots, /Sitemap: https:\/\/paste\.example\/sitemap\.xml/);
   assert.match(await (await request("/usage")).text(), /claude mcp add --transport http paste https:\/\/paste\.example\/mcp/);
+});
+
+test("only the editor is indexable, with canonical, social, and structured metadata", async () => {
+  const editor = await (await request("/new")).text();
+  assert.match(editor, /<link rel="canonical" href="https:\/\/paste\.example\/new" \/>/);
+  assert.match(editor, /<meta property="og:url" content="https:\/\/paste\.example\/new" \/>/);
+  assert.ok(!editor.includes('name="robots"'));
+  const data = JSON.parse(/<script type="application\/ld\+json">(.*?)<\/script>/.exec(editor)[1]);
+  assert.equal(data["@type"], "WebApplication");
+  assert.equal(data.url, "https://paste.example/new");
+  const created = await (await request("/", { method: "POST", body: "secret" })).text();
+  for (const path of [new URL(created).pathname, "/new?msg=hi", "/missing-paste"]) {
+    const html = await (await request(path)).text();
+    assert.match(html, /<meta name="robots" content="noindex, nofollow, noarchive" \/>/, path);
+    assert.ok(!html.includes('rel="canonical"'), path);
+  }
+  const sitemap = await request("/sitemap.xml");
+  assert.equal(sitemap.headers.get("content-type"), "application/xml; charset=utf-8");
+  assert.match(await sitemap.text(), /<loc>https:\/\/paste\.example\/new<\/loc>/);
+  const root = await request("/", { headers: { Accept: "text/html" }, redirect: "manual" });
+  assert.equal(root.status, 303);
+  assert.equal(root.headers.get("vary"), "Accept");
+  assert.equal((await request("/")).headers.get("vary"), "Accept");
 });
 
 test("POST / returns JSON when asked", async () => {
