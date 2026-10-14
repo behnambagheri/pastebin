@@ -413,9 +413,11 @@ funcsave pastebin</code></pre>
                 <div class="relative">
                 <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>import urllib.parse, urllib.request
 
-def paste(text, ttl=0, burn=False, lang="markup"):
-    query = urllib.parse.urlencode(
-        {"ttl": ttl, "burn": str(burn).lower(), "lang": lang})
+def paste(text, ttl=None, burn=False, lang="markup"):
+    params = {"burn": str(burn).lower(), "lang": lang}
+    if ttl is not None:  # None keeps the server default; 0 never expires
+        params["ttl"] = ttl
+    query = urllib.parse.urlencode(params)
     request = urllib.request.Request(
         "<span data-usage-base>https://paste.bea.sh</span>/?" + query, data=text.encode(), method="POST",
         headers={"Content-Type": "text/plain"})
@@ -433,7 +435,7 @@ print(paste("hello from Python", ttl=3600, lang="python"))</code></pre>
             <div class="overflow-x-auto">
               <table class="table table-sm">
                 <tbody class="[&_td:first-child]:font-mono [&_td:first-child]:whitespace-nowrap">
-                  <tr><td>ttl=&lt;seconds&gt;</td><td>Expire after this many seconds. <span class="font-mono">0</span> (the default) never expires.</td></tr>
+                  <tr><td>ttl=&lt;seconds&gt;</td><td>Expire after this many seconds. <span class="font-mono">0</span> never expires.{{#if ui_expiry_default}} Default when <span class="font-mono">ttl</span> is omitted: {{ui_expiry_default}}.{{/if}}</td></tr>
                   <tr><td>burn=true</td><td>Delete the paste after it is read once.</td></tr>
                   <tr><td>lang=&lt;language&gt;</td><td>Syntax highlighting in the web view, such as <span class="font-mono">bash</span>, <span class="font-mono">python</span>, or <span class="font-mono">json</span>.</td></tr>
                 </tbody>

@@ -17,7 +17,8 @@ ENDPOINTS
   GET    /usage           This guide
 
 CREATE OPTIONS (query string on POST /)
-  ttl=<seconds>           Expire after this many seconds (0 = never, default)
+  ttl=<seconds>           Expire after this many seconds; 0 never expires.
+                          Default when ttl is omitted: __DEFAULT_EXPIRY__.
   burn=true               Delete the paste after it is read once
   lang=<language>         Highlighting in the web view, e.g. bash, python, json
   curl -q -fsSL -w '\n' --data-binary @- '__BASE__/?ttl=3600&burn=true&lang=bash'
@@ -42,9 +43,11 @@ SHELL FUNCTIONS
 PYTHON (standard library only)
   import urllib.parse, urllib.request
 
-  def paste(text, ttl=0, burn=False, lang="markup"):
-      query = urllib.parse.urlencode(
-          {"ttl": ttl, "burn": str(burn).lower(), "lang": lang})
+  def paste(text, ttl=None, burn=False, lang="markup"):
+      params = {"burn": str(burn).lower(), "lang": lang}
+      if ttl is not None:  # None keeps the server default; 0 never expires
+          params["ttl"] = ttl
+      query = urllib.parse.urlencode(params)
       request = urllib.request.Request(
           "__BASE__/?" + query, data=text.encode(), method="POST",
           headers={"Content-Type": "text/plain"})

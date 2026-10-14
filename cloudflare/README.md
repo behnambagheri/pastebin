@@ -33,8 +33,10 @@ The API supports `POST /`, `GET /:id`, `GET /raw/:id`, `GET /download/:id`,
 disable caching. Client-side AES-GCM encryption, password prompts, highlighting,
 clone/delete actions, and the system/light/dark theme switch run in vanilla JavaScript.
 
-The Rust implementation's default TTL is zero (Never), which is also the Worker
-default. Query parameters accept `ttl` seconds and `burn`/`encrypted` booleans;
+The Rust implementation's default TTL is zero (Never). paste.bea.sh sets
+`DEFAULT_TTL` to 2592000 (30 days), so pastes created without `ttl` (from the
+editor or the command line) expire after 30 days; `ttl=0` keeps one forever.
+Query parameters accept `ttl` seconds and `burn`/`encrypted` booleans;
 `0` and `1` are accepted for compatibility with the existing UI. Invalid parameter
 values return 422. Bodies larger than 8 MiB return 413 instead of being truncated.
 `ENABLE_MERMAID` and `UI_LINE_NUMBERS` can be enabled in the Wrangler vars.

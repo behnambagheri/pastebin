@@ -47,7 +47,8 @@ test("daisyUI page renders, static resources load, and errors use the UI", async
   assert.equal(guide.headers.get("content-type"), "text/plain; charset=utf-8");
   const text = await guide.text();
   assert.match(text, /^Paste - Usage/);
-  assert.ok(!text.includes("__BASE__"));
+  assert.ok(!/__[A-Z_]+__/.test(text));
+  assert.match(text, /Default when ttl is omitted: Never\./);
   const cli = await request("/", { redirect: "manual", headers: { Accept: "*/*" } });
   assert.equal(cli.status, 200);
   assert.equal(await cli.text(), text);

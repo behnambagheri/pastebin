@@ -6,7 +6,7 @@
   "workers_dev": true,
   "observability": { "enabled": false },
   "build": { "command": "npm run build" },
-  "vars": { "DEFAULT_TTL": "0", "ENABLE_MERMAID": "false", "UI_LINE_NUMBERS": "false" },
+  "vars": { "DEFAULT_TTL": "2592000", "ENABLE_MERMAID": "false", "UI_LINE_NUMBERS": "false" },
   "d1_databases": [{
     "binding": "DB",
     "database_name": "bea-paste",

@@ -456,18 +456,20 @@ async fn get_static<'r>(
     )
 }
 
-fn usage_text(plugin_manager: &PluginManager, base_url: &str) -> (ContentType, String) {
+fn usage_text(plugin_manager: &PluginManager, base_url: &str, default_expiry: &str) -> (ContentType, String) {
     let guide = String::from_utf8_lossy(plugin_manager.static_resources().get("/static/usage.txt").unwrap());
-    (ContentType::Plain, guide.replace("__BASE__", base_url))
+    let guide = guide.replace("__BASE__", base_url).replace("__DEFAULT_EXPIRY__", default_expiry);
+    (ContentType::Plain, guide)
 }
 
 #[get("/usage")]
 fn get_usage(
     cfg: &State<PastebinConfig>,
     plugin_manager: &State<PluginManager>,
+    ui_expiry_default: &State<String>,
     req_host: Option<RequestHost>,
 ) -> (ContentType, String) {
-    usage_text(plugin_manager, &get_url(cfg, req_host))
+    usage_text(plugin_manager, &get_url(cfg, req_host), ui_expiry_default)
 }
 
 /// Browsers are sent to the editor; curl, wget, and scripts get the plain-text guide.
@@ -475,13 +477,14 @@ fn get_usage(
 fn index(
     cfg: &State<PastebinConfig>,
     plugin_manager: &State<PluginManager>,
+    ui_expiry_default: &State<String>,
     req_host: Option<RequestHost>,
     accept: Option<&Accept>,
 ) -> rocket::Either<rocket::response::Redirect, (ContentType, String)> {
     if accept.is_some_and(|accept| accept.media_types().any(|media| media.is_html())) {
         rocket::Either::Left(rocket::response::Redirect::to(format!("{}/new", cfg.uri_prefix)))
     } else {
-        rocket::Either::Right(usage_text(plugin_manager, &get_url(cfg, req_host)))
+        rocket::Either::Right(usage_text(plugin_manager, &get_url(cfg, req_host), ui_expiry_default))
     }
 }
 
@@ -641,6 +644,7 @@ mod tests {
         let body = response.into_string().unwrap();
         assert!(body.contains("--data-binary @- 'http://paste.example.com/'"));
         assert!(!body.contains("__BASE__"));
+        assert!(body.contains("Default when ttl is omitted: Never."));
     }
 
     #[test]

@@ -11,7 +11,7 @@ const CHUNK_BYTES = 1024 * 1024;
 const SLUG_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
 const expiryOptions = [
   ["5 minutes", 300], ["10 minutes", 600], ["1 hour", 3600],
-  ["1 day", 86400], ["1 week", 604800], ["1 month", 2630016],
+  ["1 day", 86400], ["1 week", 604800], ["30 days", 2592000],
   ["1 year", 31557600], ["Never", 0],
 ];
 
@@ -129,13 +129,19 @@ async function load(id, env, consume = true) {
 // Content-hashed query strings keep day-long static caching safe across deploys.
 function versioned(asset) { return `${asset}?v=${versions[asset]}`; }
 
-function page(env, values = {}, status = 200) {
+// The editor's expiry choices, including the configured default and its label.
+function expiry(env) {
   const defaultTtl = Number(env.DEFAULT_TTL || 0);
   const options = [...expiryOptions];
   if (!options.some(([, seconds]) => seconds === defaultTtl)) options.push([`${defaultTtl} seconds`, defaultTtl]);
+  return { options, label: options.find(([, seconds]) => seconds === defaultTtl)[0] };
+}
+
+function page(env, values = {}, status = 200) {
+  const { options, label } = expiry(env);
   const data = {
     version: "0.2.0", uri_prefix: "", ui_expiry_times: options,
-    ui_expiry_default: options.find(([, seconds]) => seconds === defaultTtl)[0],
+    ui_expiry_default: label,
     css_imports: ["/static/style.css", "/static/prism.css"].map(versioned),
     js_imports: ["/static/custom.js", "/static/prism.js"].map(versioned),
     js_init: ["var holder = document.getElementById('pastebin-code-block'); if (holder) { Prism.highlightElement(holder); }"],
@@ -152,9 +158,10 @@ function acceptsHtml(request) {
   return (request.headers.get("Accept") || "").includes("text/html");
 }
 
-function usage(url) {
+function usage(url, env) {
   const guide = new TextDecoder().decode(decode(assets["/static/usage.txt"]));
-  return response(guide.replaceAll("__BASE__", url.origin), 200, "text/plain; charset=utf-8");
+  const text = guide.replaceAll("__BASE__", url.origin).replaceAll("__DEFAULT_EXPIRY__", expiry(env).label);
+  return response(text, 200, "text/plain; charset=utf-8");
 }
 
 function missing(env) { return page(env, { is_error: true }, 404); }
@@ -170,7 +177,7 @@ async function route(request, env) {
   }
   if (method !== "GET" && method !== "HEAD") return response("Method not allowed.", 405, undefined, { Allow: "GET, HEAD, POST, DELETE" });
   // Browsers get the editor; curl, wget, and scripts get the plain-text guide.
-  if (path === "/usage" || (path === "/" && !acceptsHtml(request))) return usage(url);
+  if (path === "/usage" || (path === "/" && !acceptsHtml(request))) return usage(url, env);
   if (path === "/") return response(null, 303, undefined, { Location: "/new" });
   if (path.startsWith("/static/")) {
     const asset = assets[path];
