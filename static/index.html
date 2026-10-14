@@ -77,20 +77,39 @@
       </section>
       {{ else }}
         {{#if msg}}
-        <div role="alert" id="notice" class="alert alert-soft alert-{{level}} items-start">
-          <span class="min-w-0 break-words">{{#if url}}{{msg}} <a href="{{url}}" class="link font-mono break-all">{{url}}</a>{{else}}{{msg}}{{/if}}</span>
-          <div class="flex items-center gap-2">
-            {{#if url}}
-            <button type="button" id="copy-url-btn" data-url="{{url}}" class="btn btn-sm btn-success">
-              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
-              <span>Copy link</span>
-            </button>
-            {{/if}}
-            <button type="button" id="notice-close" class="btn btn-ghost btn-xs btn-square" aria-label="Dismiss">
+        {{#if url}}
+        <section id="notice" role="status" class="card card-border border-success/40 bg-base-100 shadow-sm">
+          <div class="card-body gap-3 p-4 sm:p-5">
+            <div class="flex items-center justify-between gap-3">
+              <p class="flex items-center gap-2 font-medium">
+                <span aria-hidden="true" class="status status-success"></span>
+                {{msg}}
+              </p>
+              <button type="button" id="notice-close" class="btn btn-ghost btn-sm btn-square shrink-0" aria-label="Dismiss">
               <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
+            </div>
+            <div class="join w-full">
+              <input id="notice-url" type="text" readonly value="{{url}}" aria-label="Paste link" class="input join-item w-full min-w-0 font-mono text-sm" />
+              <a href="{{url}}" class="btn join-item" title="Open paste">
+                <span class="hidden sm:inline">Open</span>
+                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+              </a>
+              <button type="button" id="copy-url-btn" data-url="{{url}}" class="btn btn-primary join-item min-w-28">
+                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
+                <span>Copy link</span>
+              </button>
+            </div>
           </div>
+        </section>
+        {{else}}
+        <div role="alert" id="notice" class="alert alert-soft alert-{{level}} flex items-center justify-between gap-3">
+          <span class="min-w-0 break-words">{{msg}}</span>
+          <button type="button" id="notice-close" class="btn btn-ghost btn-sm btn-square shrink-0" aria-label="Dismiss">
+              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
         </div>
+        {{/if}}
         {{/if}}
 
         <section class="card card-border bg-base-100 shadow-sm">

@@ -125,6 +125,8 @@ async function cryptoDecrypt(ciphertextB64, password) {
         var copyUrlButton = byId("copy-url-btn");
         if (copyUrlButton) {
             var copyUrlLabel = copyUrlButton.querySelector("span");
+            var noticeUrl = byId("notice-url");
+            noticeUrl.addEventListener("focus", function () { noticeUrl.select(); });
             copyUrlButton.addEventListener("click", function () {
                 navigator.clipboard.writeText(copyUrlButton.getAttribute("data-url")).then(function () {
                     copyUrlLabel.textContent = "Copied!";
