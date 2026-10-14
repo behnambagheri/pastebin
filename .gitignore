@@ -15,3 +15,4 @@ pastebin.db
 # Local agent skill installations
 /.claude/skills/
 /skills-lock.json
+.env

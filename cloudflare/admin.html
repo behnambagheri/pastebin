@@ -32,7 +32,7 @@
           </div>
           <div class="navbar-end ml-auto w-auto gap-3">
             <span id="session-email" class="hidden max-w-56 truncate text-sm text-base-content/60 sm:inline"></span>
-            <a href="/cdn-cgi/access/logout" class="btn btn-ghost btn-sm">Sign out</a>
+            <a id="sign-out" href="/cdn-cgi/access/logout" class="btn btn-ghost btn-sm">Sign out</a>
           </div>
         </nav>
       </header>
@@ -580,8 +580,16 @@
         // ── Start ───────────────────────────────────────────────────────────
         api("/admin/api/session").then(function (data) {
           var node = $("session-email");
-          node.textContent = data.email;
-          node.title = "Signed in as " + data.email;
+          node.textContent = data.method === "token" ? "Signed in with admin token" : data.email;
+          node.title = node.textContent;
+          if (data.method === "token") {
+            // Token sessions end on this server; Cloudflare Access sessions end at Access.
+            $("sign-out").addEventListener("click", function (event) {
+              event.preventDefault();
+              fetch("/admin/logout", { method: "POST", credentials: "same-origin" })
+                .finally(function () { location.href = "/admin/login"; });
+            });
+          }
         }).catch(function () {});
         loadPastes();
         function tabFromHash() {

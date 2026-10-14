@@ -1,0 +1,17 @@
+Paste is running as {{ include "pastebin.fullname" . }}.
+
+For local access:
+  kubectl --namespace {{ .Release.Namespace }} port-forward service/{{ include "pastebin.fullname" . }} 8080:{{ .Values.service.port }}
+  echo hello | curl -q -fsSL -w '\n' --data-binary @- http://127.0.0.1:8080/
+{{- if include "pastebin.adminSecret" . }}
+
+Admin: open /admin and sign in with the token in Secret {{ include "pastebin.adminSecret" . }} (key {{ .Values.admin.secretKey | default "token" }}):
+  kubectl --namespace {{ .Release.Namespace }} get secret {{ include "pastebin.adminSecret" . }} -o jsonpath='{.data.{{ .Values.admin.secretKey | default "token" }}}' | base64 -d
+{{- else }}
+
+Admin is disabled. Enable it with admin.existingSecret (recommended) or admin.token.
+{{- end }}
+{{- if not .Values.publicUrl }}
+
+Set publicUrl (e.g. https://paste.example.com) so paste links use your public address.
+{{- end }}

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: pastebin
+description: Paste — a pastebin with client-side encryption, burn-after-reading, a daisyUI interface, and an admin area
+type: application
+version: 1.0.0
+appVersion: "0.2.0"
+home: https://paste.bea.sh
+sources:
+  - https://github.com/behnambagheri/pastebin
+maintainers:
+  - name: Behnam Bagheri
+    url: https://bea.sh

@@ -1,0 +1,61 @@
+image:
+  repository: ghcr.io/behnambagheri/pastebin
+  tag: latest
+  # Pin an image digest (sha256:...) for reproducible deployments; it overrides tag.
+  digest: ""
+  pullPolicy: Always
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: paste.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Public origin used in paste links, e.g. https://paste.example.com. Empty uses the request host.
+publicUrl: ""
+# Empty by default: only trust headers your own ingress or proxy overwrites, e.g. X-Forwarded-For.
+trustedHeaders: ""
+# Default expiry in seconds (2592000 = 30 days, 0 = never). Settings in /admin override it.
+defaultTtl: 2592000
+
+admin:
+  # Sign in at /admin with a token of at least 32 characters. Without a token, /admin is disabled.
+  # Recommended: create the Secret yourself and reference it here.
+  #   kubectl create secret generic paste-admin --from-literal=token="$(openssl rand -hex 32)"
+  existingSecret: ""
+  secretKey: token
+  # Alternatively, let the chart create the Secret from this value (it is stored in the release).
+  token: ""
+
+# SQLite storage. The chart always runs one replica; the volume must not be shared.
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

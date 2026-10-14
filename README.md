@@ -19,6 +19,58 @@ The serverless deployment at [paste.bea.sh](https://paste.bea.sh) uses a Cloudfl
 Worker and D1 while preserving this project's UI and API. Build, deployment,
 verification, and rollback instructions are in [cloudflare/README.md](cloudflare/README.md).
 
+## Docker, Docker Compose, and Kubernetes
+
+The container image `ghcr.io/behnambagheri/pastebin` runs the same code as the
+Cloudflare Worker (daisyUI UI, `/usage` guide, and admin area) on Node.js, with
+SQLite storage in `/var/lib/paste` instead of D1. CI publishes it for
+`linux/amd64` and `linux/arm64` on every push to `master` (`latest`, `sha-…`)
+and on version tags. The original Rust server is still built by `Dockerfile.rust`.
+
+```sh
+docker run -d --name paste -p 8080:8080 -v paste-data:/var/lib/paste \
+  -e PASTE_ADMIN_TOKEN="$(openssl rand -hex 32)" ghcr.io/behnambagheri/pastebin:latest
+```
+
+Docker Compose: `docker-compose.yml` uses the same image (or builds it with
+`docker compose build`), a named volume, and a hardened runtime:
+
+```sh
+echo "PASTE_ADMIN_TOKEN=$(openssl rand -hex 32)" > .env
+docker compose up -d
+```
+
+Kubernetes with Helm (the chart is in `charts/pastebin` and published to GHCR):
+
+```sh
+kubectl create secret generic paste-admin --from-literal=token="$(openssl rand -hex 32)"
+helm install paste oci://ghcr.io/behnambagheri/charts/pastebin \
+  --set admin.existingSecret=paste-admin --set publicUrl=https://paste.example.com \
+  --set ingress.enabled=true --set ingress.hosts[0].host=paste.example.com
+```
+
+SQLite allows a single writer, so the chart always runs one replica with a
+`Recreate` strategy and a `ReadWriteOnce` volume (kept on uninstall).
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PASTE_ADMIN_TOKEN` | empty | Admin sign-in token, at least 32 characters. Empty disables `/admin`. |
+| `PASTE_ADMIN_TOKEN_FILE` | empty | Read the token from a file (Docker or Kubernetes secrets). |
+| `PASTE_PUBLIC_URL` | empty | Origin for paste links, e.g. `https://paste.example.com`. Empty uses the request host. |
+| `PASTE_TRUSTED_HEADERS` | empty | Comma-separated proxy headers to trust for the client IP, e.g. `X-Forwarded-For`. Only set headers your proxy overwrites. |
+| `PASTE_DEFAULT_TTL` | `2592000` | Default expiry in seconds (`0` = never). Admin settings override it. |
+| `PASTE_LISTEN` | `:8080` | Listen address. |
+| `PASTE_DATA_DIR` | `/var/lib/paste` | SQLite database directory. |
+
+### Admin sign-in without Cloudflare
+
+With `PASTE_ADMIN_TOKEN` set, `/admin` redirects to a sign-in page. Entering the
+token creates a signed, `HttpOnly`, `SameSite=Strict` session cookie for 12
+hours; changing the token signs everyone out. Scripts can call the admin API
+with `Authorization: Bearer <token>`. On paste.bea.sh, Cloudflare Access is used
+instead, and both methods can be enabled together. Expired pastes are cleaned up
+every 15 minutes, and `GET /healthz` reports health.
+
 ## Why?
 Whenever you need to share a code snippet, diff, logs, or a secret with another human being, a Pastebin service is invaluable. However, using public services such as [pastebin.com](https://pastebin.com) or [privnote.com](https://privnote.com) should be avoided when sharing data that should be available only to a selected audience (e.g., your company or private network). Instead of trusting external providers, host your own Pastebin service and take full ownership of your data.
 

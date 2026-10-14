@@ -1,2 +1,10 @@
-Cargo.lock
+.git
+.github
 target
+Cargo.lock
+cloudflare/node_modules
+cloudflare/dist
+cloudflare/generated
+cloudflare/.wrangler
+**/.DS_Store
+.idea

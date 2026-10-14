@@ -23,7 +23,23 @@ for (const filename of await readdir(path.join(root, "../static"))) {
 await writeFile(path.join(root, "generated/assets.mjs"), `export default ${JSON.stringify(assets)};\nexport const versions = ${JSON.stringify(assetVersions)};\n`);
 const adminPage = (await readFile(path.join(root, "admin.html"), "utf8"))
   .replace("__STYLE_URL__", `/static/style.css?v=${assetVersions["/static/style.css"]}`);
-await writeFile(path.join(root, "generated/admin-page.mjs"), `export default ${JSON.stringify(adminPage)};\n`);
+const loginPage = (await readFile(path.join(root, "admin-login.html"), "utf8"))
+  .replace("__STYLE_URL__", `/static/style.css?v=${assetVersions["/static/style.css"]}`);
+await writeFile(path.join(root, "generated/admin-page.mjs"),
+  `export default ${JSON.stringify(adminPage)};\nexport const loginPage = ${JSON.stringify(loginPage)};\n`);
+const migrationFiles = (await readdir(path.join(root, "migrations"))).filter((name) => name.endsWith(".sql")).sort();
+const migrations = await Promise.all(migrationFiles.map(async (name) => ({ name, sql: await readFile(path.join(root, "migrations", name), "utf8") })));
+await writeFile(path.join(root, "generated/migrations.mjs"), `export default ${JSON.stringify(migrations)};\n`);
+// The container server bundles the same Worker code with a SQLite-backed D1 adapter.
+await build({
+  entryPoints: [path.join(root, "server/index.mjs")],
+  outfile: path.join(root, "dist/server.mjs"),
+  bundle: true,
+  format: "esm",
+  platform: "node",
+  target: "node24",
+  minify: true,
+});
 await build({
   entryPoints: [path.join(root, "worker.mjs")],
   outfile: path.join(root, "dist/worker.mjs"),
@@ -33,4 +49,4 @@ await build({
   target: "es2022",
   minify: true,
 });
-console.log("Built Worker with the daisyUI template and static assets.");
+console.log("Built the Worker and the container server with the daisyUI template and static assets.");

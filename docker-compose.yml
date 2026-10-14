@@ -1,59 +1,43 @@
-version: "3.7"
-
+# Paste with Docker Compose.
+#
+#   echo "PASTE_ADMIN_TOKEN=$(openssl rand -hex 32)" > .env   # optional: enables /admin
+#   docker compose up -d
+#   open http://localhost:8080          (admin: http://localhost:8080/admin)
+#
+# Put a TLS reverse proxy in front for public use, then set PASTE_PUBLIC_URL and,
+# if the proxy overwrites it, PASTE_TRUSTED_HEADERS=X-Forwarded-For.
 services:
-  pastebin:
-    image: mkaczanowski/pastebin:latest
-    container_name: pastebin
-    volumes:
-      - $DOCKERDIR/pastebin:/var/lib/pastebin
-      - ./db:/var/lib/pastebin/
+  paste:
+    image: ghcr.io/behnambagheri/pastebin:${PASTE_IMAGE_TAG:-latest}
+    build: .
+    container_name: paste
     restart: unless-stopped
-    command: --address 0.0.0.0 --port 8081 --uri ${URI} --db=/var/lib/pastebin/
     ports:
-      - "8081:8081"
+      - "${PASTE_PORT:-8080}:8080"
+    environment:
+      # Admin sign-in token, at least 32 characters. Leave empty to disable /admin.
+      PASTE_ADMIN_TOKEN: ${PASTE_ADMIN_TOKEN:-}
+      # Public origin used in paste links, e.g. https://paste.example.com.
+      PASTE_PUBLIC_URL: ${PASTE_PUBLIC_URL:-}
+      # Proxy headers to trust for the client IP, e.g. X-Forwarded-For. Empty trusts none.
+      PASTE_TRUSTED_HEADERS: ${PASTE_TRUSTED_HEADERS:-}
+      # Default expiry in seconds (2592000 = 30 days, 0 = never). Admin settings override it.
+      PASTE_DEFAULT_TTL: ${PASTE_DEFAULT_TTL:-2592000}
+    volumes:
+      - paste-data:/var/lib/paste
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
 
-  nginx:
-    image: "nginx"
-    ports:
-      - "80:80"
-    links:
-      - pastebin:pastebin
-    command: |
-      bash -c "bash -s <<'EOF'
-        cat > /etc/nginx/nginx.conf <<'EON'
-          daemon off;
-          error_log /dev/stderr info;
+volumes:
+  paste-data:
 
-          events {
-            worker_connections 768;
-          }
-            
-          http {
-            map $$sent_http_content_type $$expires {
-                default                    off;
-                text/css                   30d;
-                application/javascript     30d;
-                image/x-icon               30d;
-            }
-
-            server {
-                listen       80; 
-                server_name  0.0.0.0; 
-                
-                gzip on;
-                gzip_types text/plain application/xml text/css application/javascript;
-            
-                expires $$expires;
-                location / {
-                    proxy_pass     http://pastebin:8081;
-                    
-                }
-            
-                access_log /dev/stdout;
-            }
-          }
-      EON
-      set -eux
-      cat /etc/nginx/nginx.conf
-      nginx 
-      EOF"
+# To keep the token out of the environment, use a Docker secret instead:
+#   services.paste.environment.PASTE_ADMIN_TOKEN_FILE: /run/secrets/paste_admin_token
+#   services.paste.secrets: [paste_admin_token]
+#   secrets.paste_admin_token.file: ./paste_admin_token.txt

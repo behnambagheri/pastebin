@@ -77,9 +77,15 @@ npx wrangler secret put PASTE_ACCESS_AUD      # the Access application's AUD tag
 npx wrangler secret put PASTE_ADMIN_EMAILS    # comma-separated administrator emails
 ```
 
+Deployments without Cloudflare Access can set `PASTE_ADMIN_TOKEN` (at least 32
+characters) to sign in at `/admin/login` with a token instead; see the main
+README. On paste.bea.sh it is not set, so only Access applies.
+
 The Access application covers `paste.bea.sh/admin` and everything below it,
-with an Allow policy for the administrator emails only. The admin area exists
-only in the Worker; the Rust server has no admin routes.
+with an Allow policy for the administrator emails only. The admin area runs in
+the Worker and in the container image (`server/index.mjs`, which serves this
+same Worker with SQLite through `server/sqlite-d1.mjs`); the Rust server has no
+admin routes.
 
 ## Build, test, and deploy
 
