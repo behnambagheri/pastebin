@@ -3,53 +3,94 @@
   "zone_id": "9c37c1376c734d3dd176f9438e1e0786",
   "hostname": "paste.bea.sh",
   "worker": "bea-paste",
-  "worker_sha256": "3b7ffbff4c1352d9a19a5c92363720750f37afe8440634c33f7ea08f523ec382",
   "database_id": "5f9c3b97-8860-46d1-941f-1be63b59b9f5",
-  "previous_dns": [
-    {
-      "comment": null,
-      "content": "vps1.bea.sh",
-      "created_on": "2024-01-28T14:53:12.72704Z",
-      "id": "2efa7246f9ae4adb4de08fe1bf22ab0e",
-      "meta": {},
-      "modified_on": "2024-07-01T06:46:38.527164Z",
-      "name": "paste.bea.sh",
-      "proxiable": true,
-      "proxied": true,
-      "settings": {
-        "flatten_cname": false
-      },
-      "tags": [],
-      "ttl": 1,
-      "type": "CNAME"
-    }
-  ],
-  "date": "2026-10-14",
-  "migration": "Fresh D1 database; no old pastes migrated",
   "custom_domain_id": "f75f3961d93f418648f661bcb54da8c875382cd4",
   "custom_domain_enabled": true,
   "cron": "*/15 * * * *",
-  "verification": {
-    "local_integration_tests": 7,
-    "workers_url_smoke": "passed",
-    "production_smoke": "passed",
-    "checks": [
-      "create",
-      "view",
-      "raw",
-      "download",
-      "clone",
-      "delete",
-      "expiry",
-      "concurrent burn reads",
-      "HEAD without consuming",
-      "8 MiB binary round trip",
-      "client-side encryption"
+  "current": {
+    "date": "2026-10-14",
+    "commit": "39edc66",
+    "deployed_with": "wrangler deploy",
+    "deployment_id": "ef721ad1-e2cd-4ef7-8031-a7d4539ff81d",
+    "version_id": "688e1a6a-ec64-4231-8969-34086855541f",
+    "worker_sha256": "2ddf094cfcc9d369b2bca71ade788096e0887a5116f04e0e58b8f85472cbf448",
+    "migrations_applied": [
+      "0001_pastes.sql",
+      "0002_admin.sql"
     ],
-    "fixture_cleanup": "pastes and chunks both zero after production tests",
-    "rendered_ui": "production /new, paste view, encrypted paste, delete, light/dark and mobile layouts inspected in the in-app browser"
+    "vars": {
+      "DEFAULT_TTL": "2592000",
+      "ENABLE_MERMAID": "false",
+      "UI_LINE_NUMBERS": "false"
+    },
+    "secrets": [
+      "PASTE_ACCESS_ISSUER",
+      "PASTE_ACCESS_AUD",
+      "PASTE_ADMIN_EMAILS"
+    ],
+    "ui": "daisyUI 5 / Tailwind CSS 4 with bea themes; content-hashed static URLs; usage guide at /usage; admin area at /admin",
+    "admin": {
+      "path": "paste.bea.sh/admin",
+      "access_app_id": "ef1f45b3-52a8-43ab-a2e1-ea6fa75e526c",
+      "access_app_name": "Paste admin",
+      "access_policy": "Paste administrators (allow; same administrator emails as ip.bea.sh)",
+      "note": "Issuer, audience, and administrator emails are Worker secrets and are not recorded here."
+    },
+    "verification": {
+      "local_tests": {
+        "worker": 19,
+        "rust": 46
+      },
+      "production_smoke": "passed",
+      "admin_gate": [
+        "paste.bea.sh/admin and /admin/api/* redirect signed-out users to Cloudflare Access",
+        "workers.dev /admin returns 403 without a token and with a forged token"
+      ],
+      "paste_metadata": "new paste recorded size, client, country, creator IP, and 30-day TTL; test paste deleted",
+      "signed_in_dashboard": "verified locally with a stubbed sign-in; production sign-in to be confirmed by the administrator"
+    }
   },
-  "worker_deployment_id": "82c6049dc28e4718a4a23aac20414423",
-  "worker_etag": "200525e0ed0b0ce52b50bb4edf5320fb1c6fa8d8e362c6926ba2f8bf9eb9426e",
-  "ui": "daisyUI 5 / Tailwind CSS 4 with bea themes; content-hashed static URLs"
+  "initial_deployment": {
+    "date": "2026-10-14",
+    "migration": "Fresh D1 database; no old pastes migrated",
+    "previous_dns": [
+      {
+        "comment": null,
+        "content": "vps1.bea.sh",
+        "created_on": "2024-01-28T14:53:12.72704Z",
+        "id": "2efa7246f9ae4adb4de08fe1bf22ab0e",
+        "meta": {},
+        "modified_on": "2024-07-01T06:46:38.527164Z",
+        "name": "paste.bea.sh",
+        "proxiable": true,
+        "proxied": true,
+        "settings": {
+          "flatten_cname": false
+        },
+        "tags": [],
+        "ttl": 1,
+        "type": "CNAME"
+      }
+    ],
+    "verification": {
+      "local_integration_tests": 7,
+      "workers_url_smoke": "passed",
+      "production_smoke": "passed",
+      "checks": [
+        "create",
+        "view",
+        "raw",
+        "download",
+        "clone",
+        "delete",
+        "expiry",
+        "concurrent burn reads",
+        "HEAD without consuming",
+        "8 MiB binary round trip",
+        "client-side encryption"
+      ],
+      "fixture_cleanup": "pastes and chunks both zero after production tests",
+      "rendered_ui": "production /new, paste view, encrypted paste, delete, light/dark and mobile layouts inspected in the in-app browser"
+    }
+  }
 }

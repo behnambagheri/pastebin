@@ -121,12 +121,12 @@ Cloudflare's MCP upload helper reported a version-readback mismatch after a
 successful upload. The deployed script was then downloaded and compared byte
 for byte with the local artifact. Its active version, etag, handlers, and D1
 binding were independently read back before live verification continued.
-`deployment.json` records the deployment identity, artifact hash, and prior DNS.
+`deployment.json` records the current deployment (version, artifact hash, migrations, admin Access app) and, under `initial_deployment`, the first deployment and the prior DNS.
 
 ## Rollback
 
 Detach `paste.bea.sh` from Worker `bea-paste` in Cloudflare's Domains & Routes.
 Then restore the previous proxied CNAME `paste.bea.sh -> vps1.bea.sh` with automatic
-TTL, as saved in `deployment.json`. This sends traffic to the previous server;
+TTL, as saved in `deployment.json` under `initial_deployment.previous_dns`. This sends traffic to the previous server;
 its current health must be checked before rollback. Keep D1 intact so new pastes
 remain recoverable. They are not automatically imported into the Rust database.
