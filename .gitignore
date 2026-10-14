@@ -10,3 +10,8 @@ Cargo.lock
 **/*.rs.bk
 
 pastebin.db
+.DS_Store
+
+# Local agent skill installations
+/.claude/skills/
+/skills-lock.json
