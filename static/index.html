@@ -79,9 +79,17 @@
         {{#if msg}}
         <div role="alert" id="notice" class="alert alert-soft alert-{{level}} items-start">
           <span class="min-w-0 break-words">{{#if url}}{{msg}} <a href="{{url}}" class="link font-mono break-all">{{url}}</a>{{else}}{{msg}}{{/if}}</span>
-          <button type="button" id="notice-close" class="btn btn-ghost btn-xs btn-square" aria-label="Dismiss">
-            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
-          </button>
+          <div class="flex items-center gap-2">
+            {{#if url}}
+            <button type="button" id="copy-url-btn" data-url="{{url}}" class="btn btn-sm btn-success">
+              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
+              <span>Copy link</span>
+            </button>
+            {{/if}}
+            <button type="button" id="notice-close" class="btn btn-ghost btn-xs btn-square" aria-label="Dismiss">
+              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+          </div>
         </div>
         {{/if}}
 

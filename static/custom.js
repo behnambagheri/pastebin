@@ -121,6 +121,21 @@ async function cryptoDecrypt(ciphertextB64, password) {
             noticeClose.addEventListener("click", function () { byId("notice").remove(); });
         }
 
+        // Copy the link of a freshly created paste.
+        var copyUrlButton = byId("copy-url-btn");
+        if (copyUrlButton) {
+            var copyUrlLabel = copyUrlButton.querySelector("span");
+            copyUrlButton.addEventListener("click", function () {
+                navigator.clipboard.writeText(copyUrlButton.getAttribute("data-url")).then(function () {
+                    copyUrlLabel.textContent = "Copied!";
+                }, function () {
+                    copyUrlLabel.textContent = "Copy failed";
+                }).then(function () {
+                    setTimeout(function () { copyUrlLabel.textContent = "Copy link"; }, 1200);
+                });
+            });
+        }
+
         // Reflect the requested or detected language in the selector.
         var lang = new URL(document.location).searchParams.get("lang");
         if (lang == null && codeBlock) {
