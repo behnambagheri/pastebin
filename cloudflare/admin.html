@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Admin — Paste</title>
+    <link rel="icon" href="/static/favicon.ico" />
+    <script>
+      (function () {
+        var preference = "system";
+        try {
+          var saved = localStorage.getItem("paste-theme");
+          if (saved === "light" || saved === "dark") preference = saved;
+        } catch (e) {}
+        var dark = preference === "dark" || (preference === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.setAttribute("data-theme", dark ? "bea-dark" : "bea");
+      })();
+    </script>
+    <link href="__STYLE_URL__" rel="stylesheet" />
+  </head>
+  <body class="flex min-h-screen flex-col bg-base-200 text-base-content">
+    <div class="mx-auto w-full max-w-6xl px-3 pt-3 sm:px-6">
+      <header class="rounded-box border border-base-300 bg-base-100/90 shadow-sm backdrop-blur">
+        <nav aria-label="Admin navigation" class="navbar flex-wrap gap-2 px-4 py-3 sm:px-6">
+          <div class="navbar-start w-auto grow gap-3">
+            <a href="/new" class="flex items-center gap-2" aria-label="Paste home">
+              <svg aria-hidden="true" class="size-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2" /><path d="M8 12h8M8 16h5" /></svg>
+              <span class="text-lg font-semibold tracking-tight">Paste</span>
+            </a>
+            <span class="badge badge-soft badge-primary">Admin</span>
+          </div>
+          <div class="navbar-end ml-auto w-auto gap-3">
+            <span id="session-email" class="hidden max-w-56 truncate text-sm text-base-content/60 sm:inline"></span>
+            <a href="/cdn-cgi/access/logout" class="btn btn-ghost btn-sm">Sign out</a>
+          </div>
+        </nav>
+      </header>
+    </div>
+
+    <main class="mx-auto w-full max-w-6xl grow space-y-4 px-3 py-6 sm:px-6">
+      <div role="tablist" aria-label="Admin sections" class="tabs tabs-box w-fit bg-base-100">
+        <button type="button" role="tab" class="tab tab-active" data-tab="pastes" aria-selected="true">Pastes</button>
+        <button type="button" role="tab" class="tab" data-tab="stats" aria-selected="false">Statistics</button>
+        <button type="button" role="tab" class="tab" data-tab="settings" aria-selected="false">Settings</button>
+      </div>
+
+      <div id="global-error" role="alert" class="alert alert-soft alert-error hidden"></div>
+
+      <!-- Pastes -->
+      <section id="panel-pastes" role="tabpanel" class="card card-border bg-base-100 shadow-sm">
+        <div class="card-body gap-4 p-4 sm:p-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <form id="search-form" class="join w-full sm:max-w-md">
+              <input id="search-input" type="search" class="input join-item w-full font-mono text-sm" placeholder="Paste ID prefix or creator IP" aria-label="Search pastes" autocomplete="off" spellcheck="false" />
+              <button type="submit" class="btn join-item">Search</button>
+            </form>
+            <div class="flex items-center gap-2">
+              <button id="delete-ip-btn" type="button" class="btn btn-sm btn-error btn-outline hidden">Delete all from this IP</button>
+              <span id="paste-count" class="text-sm text-base-content/60"></span>
+            </div>
+          </div>
+          <div class="overflow-x-auto rounded-field border border-base-300">
+            <table class="table table-sm">
+              <thead>
+                <tr><th>Paste</th><th>Created</th><th>Expires</th><th class="text-right">Size</th><th>Creator IP</th><th>Client</th><th><span class="sr-only">Actions</span></th></tr>
+              </thead>
+              <tbody id="paste-rows"></tbody>
+            </table>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span id="page-label" class="text-sm text-base-content/60"></span>
+            <div class="join">
+              <button id="prev-page" type="button" class="btn btn-sm join-item">Previous</button>
+              <button id="next-page" type="button" class="btn btn-sm join-item">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Statistics -->
+      <section id="panel-stats" role="tabpanel" class="hidden space-y-4">
+        <div class="stats stats-vertical w-full border border-base-300 bg-base-100 shadow-sm sm:stats-horizontal">
+          <div class="stat"><div class="stat-title">Active pastes</div><div id="stat-active" class="stat-value text-2xl">–</div><div class="stat-desc">Not expired</div></div>
+          <div class="stat"><div class="stat-title">Storage used</div><div id="stat-bytes" class="stat-value text-2xl">–</div><div class="stat-desc">Active paste content</div></div>
+          <div class="stat"><div class="stat-title">Creators</div><div id="stat-creators" class="stat-value text-2xl">–</div><div class="stat-desc">Distinct IPs with active pastes</div></div>
+          <div class="stat"><div class="stat-title">Created all time</div><div id="stat-all-time" class="stat-value text-2xl">–</div><div class="stat-desc">Since statistics began</div></div>
+        </div>
+        <div class="card card-border bg-base-100 shadow-sm">
+          <div class="card-body gap-4 p-4 sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 class="card-title">Pastes created per day</h2>
+              <select id="stats-days" class="select select-sm w-36" aria-label="Time range">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <div id="chart-axis" class="flex h-48 flex-col justify-between text-right font-mono text-xs text-base-content/50" aria-hidden="true"></div>
+              <div class="relative h-48 grow border-b border-base-300">
+                <div id="chart-bars" class="absolute inset-0 flex items-end gap-0.5" role="img"></div>
+              </div>
+            </div>
+            <div class="flex justify-between pl-8 font-mono text-xs text-base-content/50"><span id="chart-start"></span><span id="chart-end"></span></div>
+            <p id="chart-tip" class="min-h-5 text-sm text-base-content/70" role="status">Hover or tap a bar for details.</p>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="card card-border bg-base-100 shadow-sm">
+            <div class="card-body gap-3 p-4 sm:p-6">
+              <h2 class="card-title">Top languages</h2>
+              <ul id="lang-list" class="space-y-2"></ul>
+            </div>
+          </div>
+          <div class="card card-border bg-base-100 shadow-sm">
+            <div class="card-body gap-3 p-4 sm:p-6">
+              <h2 class="card-title">How pastes are created</h2>
+              <ul id="client-list" class="space-y-2"></ul>
+              <p class="text-xs text-base-content/50">Web means the editor in a browser; command line covers curl, scripts, and other tools.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="panel-settings" role="tabpanel" class="card card-border hidden bg-base-100 shadow-sm">
+        <form id="settings-form" class="card-body gap-6 p-4 sm:p-6">
+          <div class="grid gap-6 md:grid-cols-2">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Default expiry</legend>
+              <select id="set-default-ttl" class="select w-full"></select>
+              <p class="label">Used by the editor and when a request omits ttl.</p>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Maximum expiry</legend>
+              <select id="set-max-ttl" class="select w-full"></select>
+              <p class="label">Longer or never-expiring requests are rejected.</p>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Maximum paste size</legend>
+              <select id="set-max-bytes" class="select w-full">
+                <option value="65536">64 KiB</option>
+                <option value="262144">256 KiB</option>
+                <option value="1048576">1 MiB</option>
+                <option value="2097152">2 MiB</option>
+                <option value="4194304">4 MiB</option>
+                <option value="8388608">8 MiB (hard limit)</option>
+              </select>
+            </fieldset>
+          </div>
+          <div class="divider my-0"></div>
+          <div class="grid gap-6 md:grid-cols-2">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Maintenance mode</legend>
+              <label class="label cursor-pointer gap-3 text-base-content">
+                <input id="set-maintenance" type="checkbox" class="toggle toggle-warning" />
+                Pause new pastes
+              </label>
+              <input id="set-maintenance-message" type="text" maxlength="300" class="input w-full" placeholder="Message shown while paused" />
+              <p class="label">Existing pastes stay readable. Creating returns HTTP 503 with this message.</p>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Announcement banner</legend>
+              <input id="set-banner" type="text" maxlength="300" class="input w-full" placeholder="Leave empty to hide" />
+              <select id="set-banner-level" class="select w-full">
+                <option value="info">Info (blue)</option>
+                <option value="success">Success (green)</option>
+                <option value="warning">Warning (yellow)</option>
+                <option value="error">Error (red)</option>
+              </select>
+              <p class="label">Shown at the top of the editor and paste pages.</p>
+            </fieldset>
+          </div>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p id="settings-meta" class="text-sm text-base-content/60"></p>
+            <div class="flex items-center gap-3">
+              <span id="settings-status" role="status" class="text-sm"></span>
+              <button type="submit" class="btn btn-primary">Save settings</button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <dialog id="preview-dialog" class="modal" aria-labelledby="preview-title">
+      <div class="modal-box flex max-h-[85dvh] w-full max-w-4xl flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="preview-title" class="truncate font-mono text-base font-semibold"></h3>
+          <form method="dialog"><button class="btn btn-ghost btn-sm btn-square" aria-label="Close preview">✕</button></form>
+        </div>
+        <p id="preview-meta" class="text-xs text-base-content/60"></p>
+        <pre class="min-h-0 grow overflow-auto rounded-box bg-base-200 p-4 text-sm"><code id="preview-body"></code></pre>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <dialog id="confirm-dialog" class="modal" aria-labelledby="confirm-title">
+      <div class="modal-box max-w-sm">
+        <h3 id="confirm-title" class="text-lg font-semibold"></h3>
+        <p id="confirm-text" class="py-2 text-sm text-base-content/60"></p>
+        <div class="modal-action">
+          <form method="dialog"><button class="btn" value="cancel">Cancel</button></form>
+          <button id="confirm-ok" type="button" class="btn btn-error">Delete</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <script>
+      (function () {
+        "use strict";
+        var DURATIONS = [["5 minutes", 300], ["10 minutes", 600], ["1 hour", 3600], ["1 day", 86400], ["1 week", 604800], ["30 days", 2592000], ["1 year", 31557600]];
+        var state = { page: 1, query: "", total: 0, pageSize: 50 };
+        var $ = function (id) { return document.getElementById(id); };
+
+        function el(tag, className, text) {
+          var node = document.createElement(tag);
+          if (className) node.className = className;
+          if (text != null) node.textContent = text;
+          return node;
+        }
+        function bytes(n) {
+          if (n >= 1048576) return (n / 1048576).toFixed(2).replace(/\.?0+$/, "") + " MiB";
+          if (n >= 1024) return (n / 1024).toFixed(1).replace(/\.0$/, "") + " KiB";
+          return n + " B";
+        }
+        function when(seconds) {
+          return new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+        }
+        function duration(seconds) {
+          var match = DURATIONS.filter(function (d) { return d[1] === seconds; })[0];
+          return match ? match[0] : seconds + " seconds";
+        }
+        function showError(message) {
+          var box = $("global-error");
+          box.textContent = message;
+          box.classList.toggle("hidden", !message);
+        }
+        function api(path, options) {
+          options = options || {};
+          if (options.json !== undefined) {
+            options.body = JSON.stringify(options.json);
+            options.headers = { "Content-Type": "application/json" };
+          }
+          return fetch(path, { method: options.method || "GET", headers: options.headers, body: options.body, credentials: "same-origin" })
+            .then(function (response) {
+              return response.json().catch(function () { return {}; }).then(function (data) {
+                if (response.status === 403) throw new Error("Your admin session has expired. Reload the page to sign in again.");
+                if (!response.ok) throw new Error(data.error || "Request failed (" + response.status + ").");
+                return data;
+              });
+            });
+        }
+
+        // ── Tabs ────────────────────────────────────────────────────────────
+        var loaded = {};
+        document.querySelectorAll("[data-tab]").forEach(function (tab) {
+          tab.addEventListener("click", function () { selectTab(tab.getAttribute("data-tab")); });
+        });
+        function selectTab(name) {
+          document.querySelectorAll("[data-tab]").forEach(function (tab) {
+            var active = tab.getAttribute("data-tab") === name;
+            tab.classList.toggle("tab-active", active);
+            tab.setAttribute("aria-selected", String(active));
+            $("panel-" + tab.getAttribute("data-tab")).classList.toggle("hidden", !active);
+          });
+          showError("");
+          if (name === "stats") loadStats();
+          if (name === "settings" && !loaded.settings) loadSettings();
+          history.replaceState(null, "", "#" + name);
+        }
+
+        // ── Pastes ──────────────────────────────────────────────────────────
+        function loadPastes() {
+          var params = new URLSearchParams({ page: state.page });
+          if (state.query) params.set("q", state.query);
+          return api("/admin/api/pastes?" + params).then(renderPastes).catch(function (e) { showError(e.message); });
+        }
+        function badge(text, cls) { return el("span", "badge badge-sm " + cls, text); }
+        function renderPastes(data) {
+          state.total = data.total;
+          state.pageSize = data.page_size;
+          var rows = $("paste-rows");
+          rows.replaceChildren();
+          if (!data.pastes.length) {
+            var empty = el("tr");
+            var cell = el("td", "py-8 text-center text-base-content/60", state.query ? "No pastes match this search." : "No active pastes.");
+            cell.colSpan = 7;
+            empty.appendChild(cell);
+            rows.appendChild(empty);
+          }
+          data.pastes.forEach(function (paste) {
+            var row = el("tr", "hover:bg-base-200/60");
+            var idCell = el("td");
+            var idLine = el("div", "flex flex-wrap items-center gap-1.5");
+            idLine.appendChild(el("span", "font-mono text-xs", paste.id));
+            idLine.appendChild(badge(paste.lang, "badge-ghost"));
+            if (paste.burn) idLine.appendChild(badge("burn", "badge-warning badge-soft"));
+            if (paste.encrypted) idLine.appendChild(badge("encrypted", "badge-info badge-soft"));
+            idCell.appendChild(idLine);
+            row.appendChild(idCell);
+            row.appendChild(el("td", "whitespace-nowrap text-xs", when(paste.created_at)));
+            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.expires_at ? when(paste.expires_at) : "Never"));
+            row.appendChild(el("td", "whitespace-nowrap text-right font-mono text-xs", bytes(paste.size)));
+            var ipCell = el("td", "whitespace-nowrap");
+            if (paste.creator_ip) {
+              var ipButton = el("button", "link link-hover font-mono text-xs", paste.creator_ip);
+              ipButton.type = "button";
+              ipButton.title = "Show all pastes from this IP";
+              ipButton.addEventListener("click", function () { search(paste.creator_ip); });
+              ipCell.appendChild(ipButton);
+              if (paste.country) ipCell.appendChild(el("span", "ml-1.5 text-xs text-base-content/50", paste.country));
+            } else {
+              ipCell.appendChild(el("span", "text-xs text-base-content/40", "Not recorded"));
+            }
+            row.appendChild(ipCell);
+            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.client === "web" ? "Web" : paste.client === "cli" ? "Command line" : "—"));
+            var actions = el("td", "whitespace-nowrap text-right");
+            var view = el("button", "btn btn-ghost btn-xs", "Preview");
+            view.type = "button";
+            view.addEventListener("click", function () { preview(paste); });
+            var remove = el("button", "btn btn-ghost btn-xs text-error", "Delete");
+            remove.type = "button";
+            remove.addEventListener("click", function () {
+              confirmAction("Delete this paste?", paste.id + " will be removed permanently.", function () {
+                return api("/admin/api/pastes/" + encodeURIComponent(paste.id), { method: "DELETE" }).then(loadPastes);
+              });
+            });
+            actions.append(view, remove);
+            row.appendChild(actions);
+            rows.appendChild(row);
+          });
+          var pages = Math.max(1, Math.ceil(data.total / data.page_size));
+          $("paste-count").textContent = data.total + (data.total === 1 ? " paste" : " pastes");
+          $("page-label").textContent = "Page " + data.page + " of " + pages;
+          $("prev-page").disabled = data.page <= 1;
+          $("next-page").disabled = data.page >= pages;
+          var isIp = /[.:]/.test(state.query);
+          $("delete-ip-btn").classList.toggle("hidden", !(isIp && data.total > 0));
+        }
+        function search(query) {
+          $("search-input").value = query;
+          state.query = query;
+          state.page = 1;
+          loadPastes();
+        }
+        $("search-form").addEventListener("submit", function (event) {
+          event.preventDefault();
+          search($("search-input").value.trim());
+        });
+        $("prev-page").addEventListener("click", function () { state.page -= 1; loadPastes(); });
+        $("next-page").addEventListener("click", function () { state.page += 1; loadPastes(); });
+        $("delete-ip-btn").addEventListener("click", function () {
+          var ip = state.query;
+          confirmAction("Delete all pastes from " + ip + "?", state.total + " active pastes from this IP will be removed permanently.", function () {
+            return api("/admin/api/pastes/delete-by-ip", { method: "POST", json: { ip: ip } }).then(loadPastes);
+          });
+        });
+
+        function preview(paste) {
+          $("preview-title").textContent = paste.id;
+          $("preview-meta").textContent = [paste.lang, bytes(paste.size), paste.burn ? "burn after reading (preview does not burn it)" : "", paste.encrypted ? "encrypted: showing ciphertext" : ""].filter(Boolean).join(" · ");
+          $("preview-body").textContent = "Loading…";
+          $("preview-dialog").showModal();
+          fetch("/admin/api/pastes/" + encodeURIComponent(paste.id) + "/raw", { credentials: "same-origin" })
+            .then(function (response) {
+              if (!response.ok) throw new Error(response.status === 404 ? "This paste no longer exists." : "Could not load the paste.");
+              return response.text();
+            })
+            .then(function (text) {
+              $("preview-body").textContent = text.length > 200000 ? text.slice(0, 200000) + "\n\n… truncated in preview" : text;
+            })
+            .catch(function (e) { $("preview-body").textContent = e.message; });
+        }
+
+        var pendingConfirm = null;
+        function confirmAction(title, text, action) {
+          $("confirm-title").textContent = title;
+          $("confirm-text").textContent = text;
+          pendingConfirm = action;
+          $("confirm-dialog").showModal();
+        }
+        $("confirm-ok").addEventListener("click", function () {
+          var button = this;
+          button.disabled = true;
+          pendingConfirm().then(function () { $("confirm-dialog").close(); })
+            .catch(function (e) { $("confirm-dialog").close(); showError(e.message); })
+            .then(function () { button.disabled = false; });
+        });
+
+        // ── Statistics ──────────────────────────────────────────────────────
+        function loadStats() {
+          api("/admin/api/stats?days=" + $("stats-days").value).then(renderStats).catch(function (e) { showError(e.message); });
+        }
+        $("stats-days").addEventListener("change", loadStats);
+        function niceMax(value) {
+          if (value <= 4) return 4;
+          var magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+          var steps = [1, 2, 2.5, 5, 10];
+          for (var i = 0; i < steps.length; i++) if (steps[i] * magnitude >= value) return steps[i] * magnitude;
+          return 10 * magnitude;
+        }
+        function formatDay(day) {
+          return new Date(day + "T00:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+        }
+        function renderStats(data) {
+          var number = new Intl.NumberFormat();
+          $("stat-active").textContent = number.format(data.active.pastes);
+          $("stat-bytes").textContent = bytes(data.active.bytes);
+          $("stat-creators").textContent = number.format(data.active.creators);
+          $("stat-all-time").textContent = number.format(data.all_time);
+
+          var max = niceMax(Math.max.apply(null, data.series.map(function (d) { return d.pastes; })));
+          var axis = $("chart-axis");
+          axis.replaceChildren(el("span", "", number.format(max)), el("span", "", number.format(max / 2)), el("span", "", "0"));
+          var bars = $("chart-bars");
+          bars.replaceChildren();
+          var total = 0;
+          data.series.forEach(function (d) {
+            total += d.pastes;
+            var slot = el("button", "group flex h-full min-w-0 flex-1 items-end focus:outline-none");
+            slot.type = "button";
+            var label = formatDay(d.day) + ": " + number.format(d.pastes) + (d.pastes === 1 ? " paste" : " pastes") + ", " + bytes(d.bytes);
+            slot.setAttribute("aria-label", label);
+            var bar = el("span", "block w-full rounded-t-sm bg-primary transition-opacity group-hover:opacity-80 group-focus-visible:outline-2 group-focus-visible:outline-primary");
+            bar.style.height = d.pastes ? Math.max(2, (d.pastes / max) * 100) + "%" : "0";
+            slot.appendChild(bar);
+            var show = function () { $("chart-tip").textContent = label; };
+            slot.addEventListener("mouseenter", show);
+            slot.addEventListener("focus", show);
+            slot.addEventListener("click", show);
+            bars.appendChild(slot);
+          });
+          bars.setAttribute("aria-label", "Pastes created per day: " + number.format(total) + " over " + data.days + " days");
+          $("chart-start").textContent = formatDay(data.series[0].day);
+          $("chart-end").textContent = formatDay(data.series[data.series.length - 1].day);
+          $("chart-tip").textContent = number.format(total) + " pastes in the last " + data.days + " days. Hover or tap a bar for details.";
+
+          renderShares($("lang-list"), data.languages.map(function (row) { return [row.lang, row.pastes]; }), "No pastes in this period.");
+          var clients = data.clients;
+          var clientRows = [["Web editor", clients.web || 0], ["Command line", clients.cli || 0]];
+          if (clients.unknown) clientRows.push(["Before tracking", clients.unknown]);
+          renderShares($("client-list"), clientRows, "No pastes in this period.");
+        }
+        function renderShares(list, rows, emptyText) {
+          list.replaceChildren();
+          var sum = rows.reduce(function (s, r) { return s + r[1]; }, 0);
+          if (!sum) { list.appendChild(el("li", "text-sm text-base-content/60", emptyText)); return; }
+          var top = Math.max.apply(null, rows.map(function (r) { return r[1]; }));
+          rows.forEach(function (r) {
+            var item = el("li", "space-y-1");
+            var line = el("div", "flex justify-between gap-3 text-sm");
+            line.append(el("span", "font-mono", r[0]), el("span", "text-base-content/70", r[1] + " · " + Math.round((r[1] / sum) * 100) + "%"));
+            var track = el("div", "h-1.5 w-full rounded-full bg-base-200");
+            var fill = el("div", "h-full rounded-full bg-primary");
+            fill.style.width = (r[1] / top) * 100 + "%";
+            track.appendChild(fill);
+            item.append(line, track);
+            list.appendChild(item);
+          });
+        }
+
+        // ── Settings ────────────────────────────────────────────────────────
+        function fillDurations(select, firstLabel, firstValue) {
+          select.replaceChildren();
+          var first = el("option", "", firstLabel);
+          first.value = firstValue;
+          select.appendChild(first);
+          DURATIONS.forEach(function (d) {
+            var option = el("option", "", d[0]);
+            option.value = d[1];
+            select.appendChild(option);
+          });
+        }
+        fillDurations($("set-default-ttl"), "Never", 0);
+        fillDurations($("set-max-ttl"), "No limit", 0);
+        function ensureOption(select, value, label) {
+          if (!Array.prototype.some.call(select.options, function (o) { return Number(o.value) === value; })) {
+            var option = el("option", "", label);
+            option.value = value;
+            select.appendChild(option);
+          }
+          select.value = String(value);
+        }
+        function loadSettings() {
+          api("/admin/api/settings").then(function (data) { loaded.settings = true; renderSettings(data); }).catch(function (e) { showError(e.message); });
+        }
+        function renderSettings(data) {
+          var s = data.settings;
+          ensureOption($("set-default-ttl"), s.default_ttl, duration(s.default_ttl));
+          ensureOption($("set-max-ttl"), s.max_ttl, duration(s.max_ttl));
+          ensureOption($("set-max-bytes"), s.max_bytes, bytes(s.max_bytes));
+          $("set-maintenance").checked = s.maintenance;
+          $("set-maintenance-message").value = s.maintenance_message;
+          $("set-banner").value = s.banner;
+          $("set-banner-level").value = s.banner_level;
+          $("settings-meta").textContent = data.updated
+            ? "Last saved " + when(data.updated.updated_at) + (data.updated.updated_by ? " by " + data.updated.updated_by : "") + "."
+            : "Using the deployment defaults; nothing saved yet.";
+        }
+        $("settings-form").addEventListener("submit", function (event) {
+          event.preventDefault();
+          var status = $("settings-status");
+          status.className = "text-sm text-base-content/60";
+          status.textContent = "Saving…";
+          api("/admin/api/settings", { method: "PUT", json: {
+            default_ttl: Number($("set-default-ttl").value),
+            max_ttl: Number($("set-max-ttl").value),
+            max_bytes: Number($("set-max-bytes").value),
+            maintenance: $("set-maintenance").checked,
+            maintenance_message: $("set-maintenance-message").value,
+            banner: $("set-banner").value,
+            banner_level: $("set-banner-level").value,
+          } }).then(function (data) {
+            renderSettings(data);
+            status.className = "text-sm text-success";
+            status.textContent = "Saved. Live within about 10 seconds.";
+          }).catch(function (e) {
+            status.className = "text-sm text-error";
+            status.textContent = e.message;
+          });
+        });
+
+        // ── Start ───────────────────────────────────────────────────────────
+        api("/admin/api/session").then(function (data) {
+          var node = $("session-email");
+          node.textContent = data.email;
+          node.title = "Signed in as " + data.email;
+        }).catch(function () {});
+        loadPastes();
+        function tabFromHash() {
+          var name = location.hash.slice(1);
+          if (name === "pastes" || name === "stats" || name === "settings") selectTab(name);
+        }
+        window.addEventListener("hashchange", tabFromHash);
+        tabFromHash();
+      })();
+    </script>
+  </body>
+</html>

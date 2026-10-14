@@ -64,7 +64,9 @@ READ AND DELETE
 NOTES
   -q ignores ~/.curlrc, -f fails on HTTP errors, -sS hides progress but
   keeps errors, and -w '\n' ends the printed link with a newline.
-  Pastes are limited to 8 MiB. Anyone with a paste link can read or
-  delete it. Password encryption happens in the browser, so pastes sent
-  from the command line are stored as plain text.
+  Pastes are limited to __MAX_SIZE__. Anyone with a paste link can read
+  or delete it. Password encryption happens in the browser, so pastes
+  sent from the command line are stored as plain text. The creating IP
+  address is kept with each paste for abuse handling and is deleted
+  with it.
   Open __BASE__/new in a browser for the editor.

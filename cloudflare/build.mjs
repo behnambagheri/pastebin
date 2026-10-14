@@ -21,6 +21,9 @@ for (const filename of await readdir(path.join(root, "../static"))) {
   assetVersions[`/static/${filename}`] = createHash("sha256").update(contents).digest("hex").slice(0, 12);
 }
 await writeFile(path.join(root, "generated/assets.mjs"), `export default ${JSON.stringify(assets)};\nexport const versions = ${JSON.stringify(assetVersions)};\n`);
+const adminPage = (await readFile(path.join(root, "admin.html"), "utf8"))
+  .replace("__STYLE_URL__", `/static/style.css?v=${assetVersions["/static/style.css"]}`);
+await writeFile(path.join(root, "generated/admin-page.mjs"), `export default ${JSON.stringify(adminPage)};\n`);
 await build({
   entryPoints: [path.join(root, "worker.mjs")],
   outfile: path.join(root, "dist/worker.mjs"),

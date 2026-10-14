@@ -80,6 +80,18 @@
         </div>
       </section>
       {{ else }}
+        {{#if banner}}
+        <div role="status" class="alert alert-soft alert-{{banner_level}}">
+          <svg aria-hidden="true" class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1ZM15.5 8.5a5 5 0 0 1 0 7" /></svg>
+          <span class="min-w-0 break-words">{{banner}}</span>
+        </div>
+        {{/if}}
+        {{#if is_editable}}{{#if maintenance}}
+        <div role="alert" class="alert alert-soft alert-warning">
+          <svg aria-hidden="true" class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+          <span class="min-w-0 break-words">{{maintenance}}</span>
+        </div>
+        {{/if}}{{/if}}
         {{#if msg}}
         {{#if url}}
         <section id="notice" role="status" class="card card-border border-success/40 bg-base-100 shadow-sm">
@@ -311,7 +323,7 @@
                 {{/if}}
                 {{/if}}
                 {{#if is_editable}}
-                <button id="send-btn" type="button" class="btn btn-sm btn-primary">
+                <button id="send-btn" type="button" class="btn btn-sm btn-primary"{{#if maintenance}} disabled{{/if}}>
                   Create paste
                   <kbd class="kbd kbd-xs hidden bg-primary-content/15 text-primary-content sm:inline-flex">⌘↵</kbd>
                 </button>
@@ -459,7 +471,7 @@ $ curl -fsS -X DELETE '<span data-usage-base>https://paste.bea.sh</span>/&lt;id&
           <section aria-labelledby="usage-notes-title" class="space-y-2 text-sm leading-relaxed text-base-content/65">
             <h3 id="usage-notes-title" class="text-lg font-semibold text-base-content">Notes</h3>
             <p><code class="font-mono">-q</code> ignores <code class="font-mono">~/.curlrc</code>, <code class="font-mono">-f</code> fails on HTTP errors, <code class="font-mono">-sS</code> hides progress but keeps errors, and <code class="font-mono">-w '\n'</code> ends the link with a newline.</p>
-            <p>Pastes are limited to 8 MiB. Anyone with a paste link can read or delete it. Password encryption happens in the browser, so pastes sent from the command line are stored as plain text.</p>
+            <p>{{#if max_size_label}}Pastes are limited to {{max_size_label}}. {{/if}}Anyone with a paste link can read or delete it. Password encryption happens in the browser, so pastes sent from the command line are stored as plain text. The creating IP address is kept with each paste for abuse handling and is deleted with it.</p>
           </section>
         </div>
         <div class="modal-action">

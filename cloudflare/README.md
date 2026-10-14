@@ -41,6 +41,46 @@ Query parameters accept `ttl` seconds and `burn`/`encrypted` booleans;
 values return 422. Bodies larger than 8 MiB return 413 instead of being truncated.
 `ENABLE_MERMAID` and `UI_LINE_NUMBERS` can be enabled in the Wrangler vars.
 
+## Admin area
+
+`https://paste.bea.sh/admin` is a private dashboard, signed in through
+Cloudflare Access like `ip.bea.sh/admin`. It has three tabs:
+
+- **Pastes**: active pastes, newest first, with size, language, burn and
+  encryption flags, expiry, creator IP and country, and whether they came from
+  the web editor or the command line. Search by ID prefix or exact IP, preview
+  a paste (previews never consume burn-after-reading pastes), delete one paste,
+  or delete every paste from an IP.
+- **Statistics**: active pastes, storage used, distinct creator IPs, all-time
+  creations, pastes per day (7, 30, or 90 days), top languages, and web versus
+  command-line share. Daily counters live in `paste_stats` and survive expiry.
+- **Settings**: default expiry, maximum expiry, maximum paste size (up to the
+  8 MiB hard limit), maintenance mode (new pastes return 503 with a message;
+  existing pastes stay readable), and an announcement banner. Settings are
+  stored in D1 (`settings`), override `DEFAULT_TTL`, and apply within about
+  10 seconds without a deploy.
+
+The creating IP (`CF-Connecting-IP`), country, size, and client type are
+stored with each paste and deleted with it. Pastes created before
+`0002_admin.sql` have no creator data.
+
+Every `/admin` path verifies the `Cf-Access-Jwt-Assertion` JWT (issuer,
+audience, expiry, RS256 signature) and an administrator email allowlist
+before reading storage, so a missing Access app or configuration fails closed
+with 403. Writes must also come from the same origin. Responses are
+`private, no-store`, `noindex`, and cannot be framed. Configuration, kept out
+of the repository as Worker secrets:
+
+```sh
+npx wrangler secret put PASTE_ACCESS_ISSUER   # https://TEAM.cloudflareaccess.com
+npx wrangler secret put PASTE_ACCESS_AUD      # the Access application's AUD tag
+npx wrangler secret put PASTE_ADMIN_EMAILS    # comma-separated administrator emails
+```
+
+The Access application covers `paste.bea.sh/admin` and everything below it,
+with an Allow policy for the administrator emails only. The admin area exists
+only in the Worker; the Rust server has no admin routes.
+
 ## Build, test, and deploy
 
 From this directory, with Node.js 22 or newer:
@@ -55,7 +95,7 @@ account with Workers Scripts Edit, D1 Edit, and the permissions needed for Worke
 custom domains (Workers Routes and DNS Edit on `bea.sh`). Do not commit credentials.
 
 ```sh
-npx wrangler d1 migrations apply bea-paste --remote
+npx wrangler d1 migrations apply bea-paste --remote   # before deploying new code
 npx wrangler deploy
 npm run smoke -- https://paste.bea.sh
 ```

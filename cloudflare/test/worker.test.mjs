@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { webcrypto } from "node:crypto";
 import vm from "node:vm";
 import { Miniflare } from "miniflare";
+import { migrate } from "./helpers.mjs";
 
 let mf, db;
 before(async () => {
@@ -13,8 +14,7 @@ before(async () => {
     d1Databases: { DB: "test-pastes" }, bindings: { DEFAULT_TTL: "0" },
   });
   db = await mf.getD1Database("DB");
-  const schema = await readFile(new URL("../migrations/0001_pastes.sql", import.meta.url), "utf8");
-  for (const statement of schema.split(";").filter((s) => s.trim())) await db.prepare(statement).run();
+  await migrate(db);
 });
 after(async () => { await mf?.dispose(); });
 
@@ -131,4 +131,73 @@ test("existing browser encryption remains compatible with storage and rendering"
   assert.equal(await context.cryptoDecrypt(raw, "test password"), "private fixture");
   await assert.rejects(context.cryptoDecrypt(raw, "wrong password"));
   assert.match(await (await request(`/${id}`)).text(), /id="password-modal"/);
+});
+
+test("creation records size, creator IP, client, and daily statistics", async () => {
+  const cli = await request("/?lang=bash", { method: "POST", body: "hello", headers: { "CF-Connecting-IP": "203.0.113.7", "User-Agent": "curl/8.7.1" } });
+  const cliId = new URL(await cli.text()).pathname.slice(1);
+  const web = await request("/", { method: "POST", body: "from the editor", headers: { "CF-Connecting-IP": "2001:db8::1", "User-Agent": "Mozilla/5.0 Safari" } });
+  const webId = new URL(await web.text()).pathname.slice(1);
+  const row = await db.prepare("SELECT size, creator_ip, client, lang FROM pastes WHERE id = ?").bind(cliId).first();
+  assert.deepEqual(row, { size: 5, creator_ip: "203.0.113.7", client: "cli", lang: "bash" });
+  assert.equal((await db.prepare("SELECT client FROM pastes WHERE id = ?").bind(webId).first()).client, "web");
+  const today = new Date().toISOString().slice(0, 10);
+  const stats = await db.prepare("SELECT SUM(pastes) AS n FROM paste_stats WHERE day = ? AND lang = 'bash' AND client = 'cli'").bind(today).first();
+  assert.ok(stats.n >= 1);
+});
+
+test("admin routes are closed without Cloudflare Access configuration and a valid token", async () => {
+  for (const path of ["/admin", "/admin/", "/admin/api/pastes", "/admin/api/settings"]) {
+    const result = await request(path, { headers: { "Cf-Access-Jwt-Assertion": "forged.token.value" } });
+    assert.equal(result.status, 403, path);
+    assert.equal(result.headers.get("cache-control"), "private, no-store");
+  }
+  assert.equal((await request("/admin/api/settings", { method: "PUT", body: "{}" })).status, 403);
+});
+
+async function withSettings(value, run) {
+  // A fresh isolate avoids the per-isolate settings cache.
+  const isolated = new Miniflare({
+    scriptPath: new URL("../dist/worker.mjs", import.meta.url).pathname,
+    modules: true, compatibilityDate: "2026-08-06",
+    d1Databases: { DB: "settings-test" }, bindings: { DEFAULT_TTL: "0" },
+  });
+  try {
+    const store = await isolated.getD1Database("DB");
+    await migrate(store);
+    await store.prepare("INSERT INTO settings (key, value, updated_at) VALUES ('site', ?, 0)").bind(JSON.stringify(value)).run();
+    await run((path, options) => isolated.dispatchFetch(`https://paste.example${path}`, options));
+  } finally {
+    await isolated.dispose();
+  }
+}
+
+test("maintenance mode and the banner come from saved settings", async () => {
+  await withSettings({ maintenance: true, maintenance_message: "Back at noon.", banner: "Scheduled upgrade today.", banner_level: "warning" }, async (fetchPath) => {
+    const blocked = await fetchPath("/", { method: "POST", body: "x" });
+    assert.equal(blocked.status, 503);
+    assert.equal(await blocked.text(), "Back at noon.");
+    const html = await (await fetchPath("/new")).text();
+    assert.match(html, /Back at noon\./);
+    assert.match(html, /alert-warning">[\s\S]*Scheduled upgrade today\./);
+    assert.match(html, /id="send-btn"[^>]* disabled/);
+  });
+});
+
+test("expiry and size limits come from saved settings", async () => {
+  await withSettings({ default_ttl: 3600, max_ttl: 86400, max_bytes: 2048 }, async (fetchPath) => {
+    assert.equal((await fetchPath("/?ttl=0", { method: "POST", body: "x" })).status, 422);
+    assert.equal((await fetchPath("/?ttl=604800", { method: "POST", body: "x" })).status, 422);
+    assert.equal((await fetchPath("/?ttl=600", { method: "POST", body: "x" })).status, 200);
+    const tooBig = await fetchPath("/", { method: "POST", body: "x".repeat(2049) });
+    assert.equal(tooBig.status, 413);
+    assert.equal(await tooBig.text(), "Maximum paste size is 2 KiB.");
+    const html = await (await fetchPath("/new")).text();
+    assert.match(html, /data-default="1 hour"/);
+    assert.ok(!html.includes('value="0">Never'));
+    assert.ok(!html.includes('value="604800"'));
+    const guide = await (await fetchPath("/usage")).text();
+    assert.match(guide, /Default when ttl is omitted: 1 hour\./);
+    assert.match(guide, /limited to 2 KiB\./);
+  });
 });

@@ -2,6 +2,7 @@
 @import "tailwindcss" source(none);
 @source "../static/index.html";
 @source "../static/custom.js";
+@source "admin.html";
 /* Alert levels arrive at runtime from the server and query string. */
 @source inline("alert-success alert-info alert-warning alert-error");
 @plugin "daisyui" {

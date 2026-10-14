@@ -458,7 +458,7 @@ async fn get_static<'r>(
 
 fn usage_text(plugin_manager: &PluginManager, base_url: &str, default_expiry: &str) -> (ContentType, String) {
     let guide = String::from_utf8_lossy(plugin_manager.static_resources().get("/static/usage.txt").unwrap());
-    let guide = guide.replace("__BASE__", base_url).replace("__DEFAULT_EXPIRY__", default_expiry);
+    let guide = guide.replace("__BASE__", base_url).replace("__DEFAULT_EXPIRY__", default_expiry).replace("__MAX_SIZE__", "8 MiB");
     (ContentType::Plain, guide)
 }
 
@@ -643,7 +643,7 @@ mod tests {
         assert_eq!(response.content_type(), Some(ContentType::Plain));
         let body = response.into_string().unwrap();
         assert!(body.contains("--data-binary @- 'http://paste.example.com/'"));
-        assert!(!body.contains("__BASE__"));
+        assert!(!body.contains("__"));
         assert!(body.contains("Default when ttl is omitted: Never."));
     }
 

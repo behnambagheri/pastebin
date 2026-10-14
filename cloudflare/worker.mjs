@@ -1,12 +1,13 @@
 import Handlebars from "handlebars/runtime.js";
 import templateSpec from "./generated/template.mjs";
 import assets, { versions } from "./generated/assets.mjs";
+import { adminResponse } from "./admin.mjs";
+import * as settings from "./settings.mjs";
 
 Handlebars.registerHelper("format_url", (prefix, url) => url.startsWith("/") ? prefix + url : url);
 Handlebars.registerHelper("not", (value) => !value);
 Handlebars.registerHelper("or", (left, right) => left || right);
 const render = Handlebars.template(templateSpec);
-const MAX_BYTES = 8 * 1024 * 1024;
 const CHUNK_BYTES = 1024 * 1024;
 const SLUG_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
 const expiryOptions = [
@@ -38,13 +39,16 @@ function flag(params, key) {
   throw new HttpError(422, `Invalid ${key} value.`);
 }
 
-function ttl(params, env) {
-  const value = params.get("ttl") ?? env.DEFAULT_TTL ?? "0";
+function ttl(params, config) {
+  const value = params.get("ttl") ?? String(config.default_ttl);
   if (!/^\d+$/.test(value)) throw new HttpError(422, "Invalid ttl value.");
   const seconds = Number(value);
   // Keep expiry values within JavaScript's exact integer range.
   if (!Number.isSafeInteger(seconds) || seconds > Number.MAX_SAFE_INTEGER - Math.floor(Date.now() / 1000)) {
     throw new HttpError(422, "Invalid ttl value.");
+  }
+  if (config.max_ttl && (seconds === 0 || seconds > config.max_ttl)) {
+    throw new HttpError(422, `Pastes must expire within ${config.max_ttl} seconds (ttl=1..${config.max_ttl}).`);
   }
   return seconds;
 }
@@ -64,9 +68,10 @@ function decode(value) {
   return bytes;
 }
 
-async function readBody(request) {
+async function readBody(request, maxBytes) {
+  const tooLarge = `Maximum paste size is ${settings.formatBytes(maxBytes)}.`;
   const declared = request.headers.get("Content-Length");
-  if (declared && Number(declared) > MAX_BYTES) throw new HttpError(413, "Maximum paste size is 8 MiB.");
+  if (declared && Number(declared) > maxBytes) throw new HttpError(413, tooLarge);
   if (!request.body) return new Uint8Array();
   const reader = request.body.getReader();
   const parts = [];
@@ -75,9 +80,9 @@ async function readBody(request) {
     const { value, done } = await reader.read();
     if (done) break;
     size += value.length;
-    if (size > MAX_BYTES) {
+    if (size > maxBytes) {
       await reader.cancel();
-      throw new HttpError(413, "Maximum paste size is 8 MiB.");
+      throw new HttpError(413, tooLarge);
     }
     parts.push(value);
   }
@@ -88,16 +93,27 @@ async function readBody(request) {
 }
 
 async function create(request, env, url) {
-  const seconds = ttl(url.searchParams, env);
+  const config = await settings.load(env);
+  if (config.maintenance) throw new HttpError(503, config.maintenance_message);
+  const seconds = ttl(url.searchParams, config);
   const burn = flag(url.searchParams, "burn");
   const encrypted = flag(url.searchParams, "encrypted");
-  const data = await readBody(request);
+  const data = await readBody(request, config.max_bytes);
   const random = crypto.getRandomValues(new Uint8Array(21));
   const id = Array.from(random, (value) => SLUG_ALPHABET[value & 63]).join("");
   const now = Math.floor(Date.now() / 1000);
+  const pasteLang = lang(url.searchParams.get("lang"));
+  // Browsers send a Mozilla/ User-Agent; curl, wget, and scripts do not.
+  const client = /^Mozilla\//.test(request.headers.get("User-Agent") || "") ? "web" : "cli";
+  const country = typeof request.cf?.country === "string" ? request.cf.country : null;
   const statements = [env.DB.prepare(
-    "INSERT INTO pastes (id, lang, created_at, expires_at, burn, encrypted) VALUES (?, ?, ?, ?, ?, ?)"
-  ).bind(id, lang(url.searchParams.get("lang")), now, seconds ? now + seconds : 0, burn, encrypted)];
+    "INSERT INTO pastes (id, lang, created_at, expires_at, burn, encrypted, size, creator_ip, country, client) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(id, pasteLang, now, seconds ? now + seconds : 0, burn, encrypted, data.length,
+    request.headers.get("CF-Connecting-IP"), country, client),
+  env.DB.prepare(
+    "INSERT INTO paste_stats (day, lang, client, pastes, bytes) VALUES (?, ?, ?, 1, ?) " +
+    "ON CONFLICT(day, lang, client) DO UPDATE SET pastes = pastes + 1, bytes = bytes + excluded.bytes"
+  ).bind(new Date(now * 1000).toISOString().slice(0, 10), pasteLang, client, data.length)];
   // Separate rows preserve the Rust app's 8 MiB limit within D1's 2 MB row limit.
   for (let offset = 0; offset < data.length; offset += CHUNK_BYTES) {
     statements.push(env.DB.prepare("INSERT INTO paste_chunks (paste_id, chunk_index, data) VALUES (?, ?, ?)")
@@ -129,19 +145,25 @@ async function load(id, env, consume = true) {
 // Content-hashed query strings keep day-long static caching safe across deploys.
 function versioned(asset) { return `${asset}?v=${versions[asset]}`; }
 
-// The editor's expiry choices, including the configured default and its label.
-function expiry(env) {
-  const defaultTtl = Number(env.DEFAULT_TTL || 0);
-  const options = [...expiryOptions];
-  if (!options.some(([, seconds]) => seconds === defaultTtl)) options.push([`${defaultTtl} seconds`, defaultTtl]);
+// The editor's expiry choices within the maximum, including the default and its label.
+function expiry(config) {
+  const defaultTtl = config.default_ttl;
+  const options = expiryOptions.filter(([, seconds]) => !config.max_ttl || (seconds > 0 && seconds <= config.max_ttl));
+  if (!options.some(([, seconds]) => seconds === defaultTtl)) {
+    options.push([`${defaultTtl} seconds`, defaultTtl]);
+    options.sort((a, b) => (a[1] || Infinity) - (b[1] || Infinity));
+  }
   return { options, label: options.find(([, seconds]) => seconds === defaultTtl)[0] };
 }
 
-function page(env, values = {}, status = 200) {
-  const { options, label } = expiry(env);
+async function page(env, values = {}, status = 200) {
+  const config = await settings.load(env);
+  const { options, label } = expiry(config);
   const data = {
     version: "0.2.0", uri_prefix: "", ui_expiry_times: options,
-    ui_expiry_default: label,
+    ui_expiry_default: label, max_size_label: settings.formatBytes(config.max_bytes),
+    banner: config.banner, banner_level: config.banner_level,
+    maintenance: config.maintenance ? config.maintenance_message : "",
     css_imports: ["/static/style.css", "/static/prism.css"].map(versioned),
     js_imports: ["/static/custom.js", "/static/prism.js"].map(versioned),
     js_init: ["var holder = document.getElementById('pastebin-code-block'); if (holder) { Prism.highlightElement(holder); }"],
@@ -158,9 +180,12 @@ function acceptsHtml(request) {
   return (request.headers.get("Accept") || "").includes("text/html");
 }
 
-function usage(url, env) {
+async function usage(url, env) {
+  const config = await settings.load(env);
   const guide = new TextDecoder().decode(decode(assets["/static/usage.txt"]));
-  const text = guide.replaceAll("__BASE__", url.origin).replaceAll("__DEFAULT_EXPIRY__", expiry(env).label);
+  const text = guide.replaceAll("__BASE__", url.origin)
+    .replaceAll("__DEFAULT_EXPIRY__", expiry(config).label)
+    .replaceAll("__MAX_SIZE__", settings.formatBytes(config.max_bytes));
   return response(text, 200, "text/plain; charset=utf-8");
 }
 
@@ -170,6 +195,8 @@ async function route(request, env) {
   const url = new URL(request.url);
   const method = request.method;
   const path = url.pathname;
+  const admin = await adminResponse(request, env, { loadPaste: load });
+  if (admin) return admin;
   if (method === "POST" && path === "/") return create(request, env, url);
   if (method === "DELETE" && /^\/[A-Za-z0-9_-]+$/.test(path)) {
     await env.DB.prepare("DELETE FROM pastes WHERE id = ?").bind(path.slice(1)).run();
