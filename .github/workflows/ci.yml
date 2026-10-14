@@ -24,6 +24,12 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: cloudflare/package-lock.json
+      - name: Check that the lockfile uses the public npm registry
+        run: |
+          if grep -o '"resolved": "https://[^/]*' package-lock.json | grep -v 'registry.npmjs.org'; then
+            echo "::error::package-lock.json resolves packages from a private registry; rewrite them to https://registry.npmjs.org/"
+            exit 1
+          fi
       - run: npm ci
       - run: npm test
       - name: Check that the committed stylesheet is up to date
