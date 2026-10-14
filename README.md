@@ -13,6 +13,12 @@
 # Pastebin
 Simple, fast, standalone pastebin service.
 
+## Cloudflare deployment
+
+The serverless deployment at [paste.bea.sh](https://paste.bea.sh) uses a Cloudflare
+Worker and D1 while preserving this project's UI and API. Build, deployment,
+verification, and rollback instructions are in [cloudflare/README.md](cloudflare/README.md).
+
 ## Why?
 Whenever you need to share a code snippet, diff, logs, or a secret with another human being, a Pastebin service is invaluable. However, using public services such as [pastebin.com](https://pastebin.com) or [privnote.com](https://privnote.com) should be avoided when sharing data that should be available only to a selected audience (e.g., your company or private network). Instead of trusting external providers, host your own Pastebin service and take full ownership of your data.
 

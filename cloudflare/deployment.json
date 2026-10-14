@@ -1,0 +1,53 @@
+{
+  "account_id": "65a8188637073a50148b1e6e59e1c1a9",
+  "zone_id": "9c37c1376c734d3dd176f9438e1e0786",
+  "hostname": "paste.bea.sh",
+  "worker": "bea-paste",
+  "worker_version": "8bb9f151-a7d0-481e-954c-9aa09d065b8b",
+  "worker_sha256": "5269cc0a6946019cf4047c2d4db8f43aa31369a07cb6057e73d232b93ab55387",
+  "database_id": "5f9c3b97-8860-46d1-941f-1be63b59b9f5",
+  "previous_dns": [
+    {
+      "comment": null,
+      "content": "vps1.bea.sh",
+      "created_on": "2024-01-28T14:53:12.72704Z",
+      "id": "2efa7246f9ae4adb4de08fe1bf22ab0e",
+      "meta": {},
+      "modified_on": "2024-07-01T06:46:38.527164Z",
+      "name": "paste.bea.sh",
+      "proxiable": true,
+      "proxied": true,
+      "settings": {
+        "flatten_cname": false
+      },
+      "tags": [],
+      "ttl": 1,
+      "type": "CNAME"
+    }
+  ],
+  "date": "2026-10-14",
+  "migration": "Fresh D1 database; no old pastes migrated",
+  "custom_domain_id": "f75f3961d93f418648f661bcb54da8c875382cd4",
+  "custom_domain_enabled": true,
+  "cron": "*/15 * * * *",
+  "verification": {
+    "local_integration_tests": 7,
+    "workers_url_smoke": "passed",
+    "production_smoke": "passed",
+    "checks": [
+      "create",
+      "view",
+      "raw",
+      "download",
+      "clone",
+      "delete",
+      "expiry",
+      "concurrent burn reads",
+      "HEAD without consuming",
+      "8 MiB binary round trip",
+      "client-side encryption"
+    ],
+    "fixture_cleanup": "pastes and chunks both zero after production tests",
+    "rendered_ui": "production /new inspected in the in-app browser"
+  }
+}

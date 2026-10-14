@@ -1,0 +1,18 @@
+{
+  "name": "bea-paste",
+  "main": "dist/worker.mjs",
+  "account_id": "65a8188637073a50148b1e6e59e1c1a9",
+  "compatibility_date": "2026-08-06",
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "build": { "command": "npm run build" },
+  "vars": { "DEFAULT_TTL": "0", "ENABLE_MERMAID": "false", "UI_LINE_NUMBERS": "false" },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "bea-paste",
+    "database_id": "5f9c3b97-8860-46d1-941f-1be63b59b9f5",
+    "migrations_dir": "migrations"
+  }],
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "routes": [{ "pattern": "paste.bea.sh", "custom_domain": true }]
+}
