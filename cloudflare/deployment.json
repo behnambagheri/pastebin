@@ -3,8 +3,7 @@
   "zone_id": "9c37c1376c734d3dd176f9438e1e0786",
   "hostname": "paste.bea.sh",
   "worker": "bea-paste",
-  "worker_version": "8bb9f151-a7d0-481e-954c-9aa09d065b8b",
-  "worker_sha256": "5269cc0a6946019cf4047c2d4db8f43aa31369a07cb6057e73d232b93ab55387",
+  "worker_sha256": "3b7ffbff4c1352d9a19a5c92363720750f37afe8440634c33f7ea08f523ec382",
   "database_id": "5f9c3b97-8860-46d1-941f-1be63b59b9f5",
   "previous_dns": [
     {
@@ -48,6 +47,9 @@
       "client-side encryption"
     ],
     "fixture_cleanup": "pastes and chunks both zero after production tests",
-    "rendered_ui": "production /new inspected in the in-app browser"
-  }
+    "rendered_ui": "production /new, paste view, encrypted paste, delete, light/dark and mobile layouts inspected in the in-app browser"
+  },
+  "worker_deployment_id": "82c6049dc28e4718a4a23aac20414423",
+  "worker_etag": "200525e0ed0b0ce52b50bb4edf5320fb1c6fa8d8e362c6926ba2f8bf9eb9426e",
+  "ui": "daisyUI 5 / Tailwind CSS 4 with bea themes; content-hashed static URLs"
 }

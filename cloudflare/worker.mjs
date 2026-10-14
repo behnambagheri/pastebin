@@ -1,6 +1,6 @@
 import Handlebars from "handlebars/runtime.js";
 import templateSpec from "./generated/template.mjs";
-import assets from "./generated/assets.mjs";
+import assets, { versions } from "./generated/assets.mjs";
 
 Handlebars.registerHelper("format_url", (prefix, url) => url.startsWith("/") ? prefix + url : url);
 Handlebars.registerHelper("not", (value) => !value);
@@ -126,6 +126,9 @@ async function load(id, env, consume = true) {
   return paste;
 }
 
+// Content-hashed query strings keep day-long static caching safe across deploys.
+function versioned(asset) { return `${asset}?v=${versions[asset]}`; }
+
 function page(env, values = {}, status = 200) {
   const defaultTtl = Number(env.DEFAULT_TTL || 0);
   const options = [...expiryOptions];
@@ -133,8 +136,8 @@ function page(env, values = {}, status = 200) {
   const data = {
     version: "0.2.0", uri_prefix: "", ui_expiry_times: options,
     ui_expiry_default: options.find(([, seconds]) => seconds === defaultTtl)[0],
-    css_imports: ["/static/style.css", "/static/prism.css"],
-    js_imports: ["/static/custom.js", "/static/prism.js"],
+    css_imports: ["/static/style.css", "/static/prism.css"].map(versioned),
+    js_imports: ["/static/custom.js", "/static/prism.js"].map(versioned),
     js_init: ["var holder = document.getElementById('pastebin-code-block'); if (holder) { Prism.highlightElement(holder); }"],
     ...values,
   };

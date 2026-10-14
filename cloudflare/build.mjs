@@ -1,6 +1,7 @@
 import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import Handlebars from "handlebars";
 import { build } from "esbuild";
 import { buildCss } from "./build-css.mjs";
@@ -13,11 +14,13 @@ const template = await readFile(path.join(root, "../static/index.html"), "utf8")
 const compatible = template.replace("{{#if is_created or is_clone}}", "{{#if (or is_created is_clone)}}");
 await writeFile(path.join(root, "generated/template.mjs"), `export default ${Handlebars.precompile(compatible)};\n`);
 const assets = {};
+const assetVersions = {};
 for (const filename of await readdir(path.join(root, "../static"))) {
   const contents = await readFile(path.join(root, "../static", filename));
   assets[`/static/${filename}`] = contents.toString("base64");
+  assetVersions[`/static/${filename}`] = createHash("sha256").update(contents).digest("hex").slice(0, 12);
 }
-await writeFile(path.join(root, "generated/assets.mjs"), `export default ${JSON.stringify(assets)};\n`);
+await writeFile(path.join(root, "generated/assets.mjs"), `export default ${JSON.stringify(assets)};\nexport const versions = ${JSON.stringify(assetVersions)};\n`);
 await build({
   entryPoints: [path.join(root, "worker.mjs")],
   outfile: path.join(root, "dist/worker.mjs"),

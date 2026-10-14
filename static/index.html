@@ -24,7 +24,7 @@
       })();
     </script>
     {{#each css_imports as |url|}}
-    <link href="{{format_url ../uri_prefix url}}" rel="stylesheet" />
+    <link href="{{{format_url ../uri_prefix url}}}" rel="stylesheet" />
     {{/each}}
   </head>
   <body class="flex min-h-screen flex-col bg-base-200 text-base-content">
@@ -356,7 +356,7 @@
       }
     </script>
     {{#each js_imports as |url|}}
-    <script src="{{format_url ../uri_prefix url}}"></script>
+    <script src="{{{format_url ../uri_prefix url}}}"></script>
     {{/each}}
   </body>
 </html>

@@ -36,7 +36,8 @@ test("daisyUI page renders, static resources load, and errors use the UI", async
   const html = await page.text();
   assert.match(html, /id="content-textarea"/);
   assert.match(html, /id="expiry-selector"[^>]*data-default="Never"/);
-  assert.match(html, /href="\/static\/style.css"/);
+  assert.match(html, /href="\/static\/style.css\?v=[0-9a-f]{12}"/);
+  assert.match(html, /src="\/static\/custom.js\?v=[0-9a-f]{12}"/);
   assert.ok(!/cdnjs|jquery|bootstrap/i.test(html));
   assert.ok(!html.includes("{{"));
   const js = await request("/static/custom.js");
