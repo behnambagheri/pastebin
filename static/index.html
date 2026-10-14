@@ -7,6 +7,10 @@
     <meta name="theme-color" content="#2563eb" />
     <title>Paste — bea.sh</title>
     <link rel="icon" href="{{uri_prefix}}/static/favicon.ico" />
+    {{#if agent_links}}
+    <link rel="describedby" type="text/markdown" href="/llms.txt" />
+    <link rel="service-desc" type="application/vnd.oai.openapi+json" href="/openapi.json" />
+    {{/if}}
     <script>
       // Apply the saved theme before first paint to avoid a flash of the wrong theme.
       (function () {

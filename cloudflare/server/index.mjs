@@ -12,7 +12,8 @@ import { SqliteD1, migrate } from "./sqlite-d1.mjs";
 // with SQLite in place of D1 and an admin token in place of Cloudflare Access.
 
 const CLEANUP_MS = 15 * 60 * 1000;
-const MAX_BODY_BYTES = 8 * 1024 * 1024 + 64 * 1024;
+// MCP requests carry the paste JSON-escaped, so allow twice the 8 MiB paste limit.
+const MAX_BODY_BYTES = 2 * 8 * 1024 * 1024 + 64 * 1024;
 
 export function serverConfig(env = process.env) {
   const listen = env.PASTE_LISTEN || ":8080";

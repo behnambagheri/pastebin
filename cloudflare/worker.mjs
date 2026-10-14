@@ -2,6 +2,7 @@ import Handlebars from "handlebars/runtime.js";
 import templateSpec from "./generated/template.mjs";
 import assets, { versions } from "./generated/assets.mjs";
 import { adminResponse } from "./admin.mjs";
+import { DISCOVERY_LINK, ROBOTS, apiCatalog, mcpResponse, openApi } from "./agents.mjs";
 import * as settings from "./settings.mjs";
 
 Handlebars.registerHelper("format_url", (prefix, url) => url.startsWith("/") ? prefix + url : url);
@@ -9,6 +10,7 @@ Handlebars.registerHelper("not", (value) => !value);
 Handlebars.registerHelper("or", (left, right) => left || right);
 const render = Handlebars.template(templateSpec);
 const CHUNK_BYTES = 1024 * 1024;
+const MCP_ENVELOPE_BYTES = 64 * 1024;
 const SLUG_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
 const expiryOptions = [
   ["5 minutes", 300], ["10 minutes", 600], ["1 hour", 3600],
@@ -23,7 +25,7 @@ class HttpError extends Error {
 function response(body, status = 200, type = "text/plain; charset=utf-8", extra = {}) {
   return new Response(body, { status, headers: {
     "Content-Type": type, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
-    "Referrer-Policy": "no-referrer", ...extra,
+    "Referrer-Policy": "no-referrer", Link: DISCOVERY_LINK, ...extra,
   } });
 }
 
@@ -92,35 +94,59 @@ async function readBody(request, maxBytes) {
   return body;
 }
 
-async function create(request, env, url) {
+// Stores a paste; options come from the query string (or MCP arguments mapped onto one).
+async function store(env, params, data, origin, meta) {
   const config = await settings.load(env);
   if (config.maintenance) throw new HttpError(503, config.maintenance_message);
-  const seconds = ttl(url.searchParams, config);
-  const burn = flag(url.searchParams, "burn");
-  const encrypted = flag(url.searchParams, "encrypted");
-  const data = await readBody(request, config.max_bytes);
+  const seconds = ttl(params, config);
+  const burn = flag(params, "burn");
+  const encrypted = flag(params, "encrypted");
+  if (data.length > config.max_bytes) throw new HttpError(413, `Maximum paste size is ${settings.formatBytes(config.max_bytes)}.`);
   const random = crypto.getRandomValues(new Uint8Array(21));
   const id = Array.from(random, (value) => SLUG_ALPHABET[value & 63]).join("");
   const now = Math.floor(Date.now() / 1000);
-  const pasteLang = lang(url.searchParams.get("lang"));
-  // Browsers send a Mozilla/ User-Agent; curl, wget, and scripts do not.
-  const client = /^Mozilla\//.test(request.headers.get("User-Agent") || "") ? "web" : "cli";
-  const country = typeof request.cf?.country === "string" ? request.cf.country : null;
+  const pasteLang = lang(params.get("lang"));
   const statements = [env.DB.prepare(
     "INSERT INTO pastes (id, lang, created_at, expires_at, burn, encrypted, size, creator_ip, country, client) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  ).bind(id, pasteLang, now, seconds ? now + seconds : 0, burn, encrypted, data.length,
-    request.headers.get("CF-Connecting-IP"), country, client),
+  ).bind(id, pasteLang, now, seconds ? now + seconds : 0, burn, encrypted, data.length, meta.ip, meta.country, meta.client),
   env.DB.prepare(
     "INSERT INTO paste_stats (day, lang, client, pastes, bytes) VALUES (?, ?, ?, 1, ?) " +
     "ON CONFLICT(day, lang, client) DO UPDATE SET pastes = pastes + 1, bytes = bytes + excluded.bytes"
-  ).bind(new Date(now * 1000).toISOString().slice(0, 10), pasteLang, client, data.length)];
+  ).bind(new Date(now * 1000).toISOString().slice(0, 10), pasteLang, meta.client, data.length)];
   // Separate rows preserve the Rust app's 8 MiB limit within D1's 2 MB row limit.
   for (let offset = 0; offset < data.length; offset += CHUNK_BYTES) {
     statements.push(env.DB.prepare("INSERT INTO paste_chunks (paste_id, chunk_index, data) VALUES (?, ?, ?)")
       .bind(id, offset / CHUNK_BYTES, encode(data.subarray(offset, offset + CHUNK_BYTES))));
   }
   await env.DB.batch(statements);
-  return response(`${url.origin}/${id}`);
+  return {
+    id, url: `${origin}/${id}`, raw_url: `${origin}/raw/${id}`, download_url: `${origin}/download/${id}`,
+    lang: pasteLang, size: data.length, burn: Boolean(burn), encrypted: Boolean(encrypted),
+    expires_at: seconds ? new Date((now + seconds) * 1000).toISOString() : null,
+  };
+}
+
+function requestMeta(request, client) {
+  return {
+    ip: request.headers.get("CF-Connecting-IP"),
+    country: typeof request.cf?.country === "string" ? request.cf.country : null,
+    client,
+  };
+}
+
+async function create(request, env, url) {
+  const config = await settings.load(env);
+  if (config.maintenance) throw new HttpError(503, config.maintenance_message);
+  // Validate options before reading a body that would be rejected anyway.
+  ttl(url.searchParams, config);
+  flag(url.searchParams, "burn");
+  flag(url.searchParams, "encrypted");
+  const data = await readBody(request, config.max_bytes);
+  // Browsers send a Mozilla/ User-Agent; curl, wget, and scripts do not.
+  const client = /^Mozilla\//.test(request.headers.get("User-Agent") || "") ? "web" : "cli";
+  const paste = await store(env, url.searchParams, data, url.origin, requestMeta(request, client));
+  if (wantsJson(request)) return response(JSON.stringify(paste) + "\n", 200, "application/json");
+  return response(paste.url);
 }
 
 async function load(id, env, consume = true) {
@@ -160,7 +186,7 @@ async function page(env, values = {}, status = 200) {
   const config = await settings.load(env);
   const { options, label } = expiry(config);
   const data = {
-    version: "0.2.0", uri_prefix: "", ui_expiry_times: options,
+    version: "0.2.0", uri_prefix: "", agent_links: true, ui_expiry_times: options,
     ui_expiry_default: label, max_size_label: settings.formatBytes(config.max_bytes),
     banner: config.banner, banner_level: config.banner_level,
     maintenance: config.maintenance ? config.maintenance_message : "",
@@ -180,13 +206,37 @@ function acceptsHtml(request) {
   return (request.headers.get("Accept") || "").includes("text/html");
 }
 
-async function usage(url, env) {
+function wantsJson(request) {
+  return (request.headers.get("Accept") || "").includes("application/json");
+}
+
+async function limits(env) {
   const config = await settings.load(env);
-  const guide = new TextDecoder().decode(decode(assets["/static/usage.txt"]));
-  const text = guide.replaceAll("__BASE__", url.origin)
-    .replaceAll("__DEFAULT_EXPIRY__", expiry(config).label)
-    .replaceAll("__MAX_SIZE__", settings.formatBytes(config.max_bytes));
-  return response(text, 200, "text/plain; charset=utf-8");
+  return { defaultExpiry: expiry(config).label, maxSize: settings.formatBytes(config.max_bytes), maxBytes: config.max_bytes };
+}
+
+// Serves a guide from static/ with this deployment's origin and limits filled in.
+async function guide(asset, type, url, env) {
+  const { defaultExpiry, maxSize } = await limits(env);
+  const text = new TextDecoder().decode(decode(assets[asset])).replaceAll("__BASE__", url.origin)
+    .replaceAll("__DEFAULT_EXPIRY__", defaultExpiry).replaceAll("__MAX_SIZE__", maxSize);
+  return response(text, 200, type);
+}
+
+async function remove(id, env) {
+  const result = await env.DB.prepare("DELETE FROM pastes WHERE id = ?").bind(id).run();
+  return result.meta.changes > 0;
+}
+
+async function mcp(request, env, url) {
+  const current = await limits(env);
+  const context = {
+    env, origin: url.origin, limits: current, api: { store, load, remove },
+    meta: requestMeta(request, "agent"),
+    // JSON escaping grows the content; store() still enforces the paste limit itself.
+    readBody: () => readBody(request, current.maxBytes * 2 + MCP_ENVELOPE_BYTES),
+  };
+  return mcpResponse(request, context, response);
 }
 
 function missing(env) { return page(env, { is_error: true }, 404); }
@@ -198,13 +248,18 @@ async function route(request, env) {
   const admin = await adminResponse(request, env, { loadPaste: load });
   if (admin) return admin;
   if (method === "POST" && path === "/") return create(request, env, url);
+  if (path === "/mcp") return mcp(request, env, url);
   if (method === "DELETE" && /^\/[A-Za-z0-9_-]+$/.test(path)) {
-    await env.DB.prepare("DELETE FROM pastes WHERE id = ?").bind(path.slice(1)).run();
+    await remove(path.slice(1), env);
     return response(null);
   }
   if (method !== "GET" && method !== "HEAD") return response("Method not allowed.", 405, undefined, { Allow: "GET, HEAD, POST, DELETE" });
   // Browsers get the editor; curl, wget, and scripts get the plain-text guide.
-  if (path === "/usage" || (path === "/" && !acceptsHtml(request))) return usage(url, env);
+  if (path === "/usage" || (path === "/" && !acceptsHtml(request))) return guide("/static/usage.txt", "text/plain; charset=utf-8", url, env);
+  if (path === "/llms.txt") return guide("/static/llms.txt", "text/markdown; charset=utf-8", url, env);
+  if (path === "/openapi.json") return response(JSON.stringify(openApi(url.origin, await limits(env)), null, 2), 200, "application/vnd.oai.openapi+json", { "Access-Control-Allow-Origin": "*" });
+  if (path === "/.well-known/api-catalog") return response(JSON.stringify(apiCatalog(url.origin), null, 2), 200, 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"');
+  if (path === "/robots.txt") return response(ROBOTS);
   if (path === "/") return response(null, 303, undefined, { Location: "/new" });
   if (path.startsWith("/static/")) {
     const asset = assets[path];

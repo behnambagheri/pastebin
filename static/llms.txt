@@ -1,0 +1,53 @@
+# Paste
+
+> Paste (__BASE__) is a pastebin for sharing text, code, logs, and files by link. Create a paste with one HTTP POST of the raw content and get its URL back; no account or API key is needed. Pastes can expire, be deleted after one read, and carry a language for syntax highlighting.
+
+Agents can use the HTTP API below or the MCP server at `__BASE__/mcp`.
+
+- Anyone with a paste link can read or delete it. Do not paste secrets unless the user asks you to.
+- Pastes are limited to __MAX_SIZE__. Without `ttl`, a paste expires after __DEFAULT_EXPIRY__.
+- Reading a burn-after-reading paste deletes it, so read it only when the user wants its contents.
+
+## Create a paste
+
+`POST __BASE__/` with the raw content as the request body (not form-encoded, not JSON). Send `Accept: application/json` to get a JSON object instead of the plain-text link.
+
+```sh
+curl -q -fsS --data-binary @notes.txt -H 'Accept: application/json' '__BASE__/?ttl=3600&lang=python'
+```
+
+```json
+{"id":"…","url":"__BASE__/…","raw_url":"__BASE__/raw/…","download_url":"__BASE__/download/…","lang":"python","size":42,"burn":false,"encrypted":false,"expires_at":"2026-01-01T12:00:00.000Z"}
+```
+
+Query parameters (all optional):
+
+- `ttl`: seconds until expiry; `0` never expires (when the server allows it).
+- `burn`: `true` deletes the paste after it is read once.
+- `lang`: highlighting language for the web view, e.g. `bash`, `python`, `json`, `diff`, `markdown`.
+
+Give the user `url` to view the paste in a browser and `raw_url` for its plain contents.
+
+## Read and delete
+
+- `GET __BASE__/raw/<id>`: the contents as `text/plain` (404 if missing, expired, or already burned).
+- `GET __BASE__/download/<id>`: the contents as a file download.
+- `GET __BASE__/<id>`: the highlighted HTML page for people; agents should prefer `/raw/<id>`.
+- `DELETE __BASE__/<id>`: deletes the paste.
+
+Errors are plain text: 413 (too large), 422 (invalid parameter), 503 (maintenance, creation disabled).
+
+## MCP
+
+`__BASE__/mcp` is a stateless MCP server over Streamable HTTP with no authentication. Tools: `create_paste`, `read_paste`, `delete_paste`.
+
+```sh
+claude mcp add --transport http paste __BASE__/mcp
+```
+
+## Reference
+
+- [OpenAPI 3.1 description](__BASE__/openapi.json)
+- [API catalog (RFC 9727)](__BASE__/.well-known/api-catalog)
+- [Command-line guide with shell and Python examples](__BASE__/usage)
+- [Web editor](__BASE__/new)

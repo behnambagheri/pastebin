@@ -201,3 +201,83 @@ test("expiry and size limits come from saved settings", async () => {
     assert.match(guide, /limited to 2 KiB\./);
   });
 });
+
+test("agents can discover the API through llms.txt, OpenAPI, the API catalog, and Link headers", async () => {
+  const llms = await request("/llms.txt");
+  assert.equal(llms.headers.get("content-type"), "text/markdown; charset=utf-8");
+  const text = await llms.text();
+  assert.match(text, /^# Paste\n/);
+  assert.match(text, /https:\/\/paste\.example\/mcp/);
+  assert.ok(!/__[A-Z_]+__/.test(text));
+  const spec = await (await request("/openapi.json")).json();
+  assert.equal(spec.openapi, "3.1.0");
+  assert.equal(spec.servers[0].url, "https://paste.example");
+  assert.equal(spec.paths["/"].post.operationId, "createPaste");
+  const catalog = await request("/.well-known/api-catalog");
+  assert.match(catalog.headers.get("content-type"), /^application\/linkset\+json/);
+  assert.equal((await catalog.json()).linkset[0]["service-desc"][0].href, "https://paste.example/openapi.json");
+  const page = await request("/new");
+  assert.match(page.headers.get("link"), /<\/llms\.txt>; rel="describedby"/);
+  assert.match(await page.text(), /<link rel="service-desc"[^>]*href="\/openapi\.json"/);
+  const robots = await (await request("/robots.txt")).text();
+  assert.match(robots, /Allow: \/llms\.txt/);
+  assert.match(robots, /Disallow: \/\n/);
+  assert.match(await (await request("/usage")).text(), /claude mcp add --transport http paste https:\/\/paste\.example\/mcp/);
+});
+
+test("POST / returns JSON when asked", async () => {
+  const result = await request("/?ttl=600&lang=json", { method: "POST", body: "{}", headers: { Accept: "application/json" } });
+  assert.equal(result.headers.get("content-type"), "application/json");
+  const paste = await result.json();
+  assert.equal(paste.url, `https://paste.example/${paste.id}`);
+  assert.equal(paste.raw_url, `https://paste.example/raw/${paste.id}`);
+  assert.equal(paste.lang, "json");
+  assert.equal(paste.size, 2);
+  assert.ok(Math.abs(Date.parse(paste.expires_at) - Date.now() - 600_000) < 60_000);
+  assert.equal(await (await request(`/raw/${paste.id}`)).text(), "{}");
+});
+
+const rpc = (body, headers = {}) => request("/mcp", {
+  method: "POST", body: JSON.stringify(body),
+  headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream", ...headers },
+});
+
+test("the MCP server initializes, lists tools, and creates, reads, and deletes pastes", async () => {
+  const init = await (await rpc({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } } })).json();
+  assert.equal(init.result.protocolVersion, "2025-06-18");
+  assert.deepEqual(init.result.capabilities, { tools: { listChanged: false } });
+  assert.equal((await rpc({ jsonrpc: "2.0", method: "notifications/initialized" })).status, 202);
+  const list = await (await rpc({ jsonrpc: "2.0", id: 2, method: "tools/list" })).json();
+  assert.deepEqual(list.result.tools.map((tool) => tool.name), ["create_paste", "read_paste", "delete_paste"]);
+
+  const call = async (name, args) => (await (await rpc({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name, arguments: args } })).json()).result;
+  const created = await call("create_paste", { content: "from an agent: فارسی", lang: "markdown", ttl: 600 });
+  const paste = created.structuredContent;
+  assert.equal(paste.lang, "markdown");
+  assert.deepEqual(JSON.parse(created.content[0].text), paste);
+  const row = await db.prepare("SELECT client FROM pastes WHERE id = ?").bind(paste.id).first();
+  assert.equal(row.client, "agent");
+  assert.equal((await call("read_paste", { id: paste.url })).content[0].text, "from an agent: فارسی");
+  assert.equal((await call("read_paste", { id: paste.raw_url })).content[0].text, "from an agent: فارسی");
+  assert.equal((await call("delete_paste", { id: paste.id })).content[0].text, `Deleted paste ${paste.id}.`);
+  assert.equal((await call("read_paste", { id: paste.id })).isError, true);
+
+  const burned = (await call("create_paste", { content: "once", burn: true })).structuredContent;
+  assert.match((await call("read_paste", { id: burned.id })).content[1].text, /burn-after-reading/);
+  assert.equal((await request(`/raw/${burned.id}`)).status, 404);
+
+  assert.equal((await call("create_paste", { content: "x", ttl: -5 })).isError, true);
+  assert.equal((await call("read_paste", { id: "../etc" })).isError, true);
+});
+
+test("the MCP endpoint reports protocol errors", async () => {
+  assert.equal((await request("/mcp")).status, 405);
+  const bad = await request("/mcp", { method: "POST", body: "{not json" });
+  assert.equal(bad.status, 400);
+  assert.equal((await bad.json()).error.code, -32700);
+  assert.equal((await (await rpc({ jsonrpc: "2.0", id: 9, method: "resources/list" })).json()).error.code, -32601);
+  assert.equal((await (await rpc({ jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "nope" } })).json()).error.code, -32602);
+  assert.equal((await rpc({ jsonrpc: "2.0", id: 9, method: "ping" }, { "MCP-Protocol-Version": "1999-01-01" })).status, 400);
+  const unknown = await (await rpc({ jsonrpc: "2.0", id: 10, method: "initialize", params: { protocolVersion: "2099-01-01" } })).json();
+  assert.equal(unknown.result.protocolVersion, "2025-11-25");
+});

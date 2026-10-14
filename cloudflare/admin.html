@@ -365,7 +365,7 @@
               ipCell.appendChild(el("span", "text-xs text-base-content/40", "Not recorded"));
             }
             row.appendChild(ipCell);
-            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.client === "web" ? "Web" : paste.client === "cli" ? "CLI" : "—"));
+            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.client === "web" ? "Web" : paste.client === "cli" ? "CLI" : paste.client === "agent" ? "Agent" : "—"));
             var actions = el("td", "whitespace-nowrap text-right");
             var link = location.origin + "/" + paste.id;
             var copy = iconButton("copy", "Copy link", "");
@@ -495,6 +495,7 @@
           renderShares($("lang-list"), data.languages.map(function (row) { return [row.lang, row.pastes]; }), "No pastes in this period.");
           var clients = data.clients;
           var clientRows = [["Web editor", clients.web || 0], ["Command line", clients.cli || 0]];
+          if (clients.agent) clientRows.push(["AI agents (MCP)", clients.agent]);
           if (clients.unknown) clientRows.push(["Before tracking", clients.unknown]);
           renderShares($("client-list"), clientRows, "No pastes in this period.");
         }

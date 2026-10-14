@@ -29,7 +29,9 @@ Expiry is checked during reads, and a cron job removes up to 1,000 expired paste
 every 15 minutes. Foreign keys cascade deletion to the content chunks.
 
 The API supports `POST /`, `GET /:id`, `GET /raw/:id`, `GET /download/:id`,
-`GET /new?id=:id`, `GET /static/:resource`, and `DELETE /:id`. Paste responses
+`GET /new?id=:id`, `GET /static/:resource`, and `DELETE /:id`, plus agent
+discovery (`/llms.txt`, `/openapi.json`, `/.well-known/api-catalog`, `/robots.txt`)
+and an MCP server at `POST /mcp` (`agents.mjs`). Paste responses
 disable caching. Client-side AES-GCM encryption, password prompts, highlighting,
 clone/delete actions, and the system/light/dark theme switch run in vanilla JavaScript.
 
@@ -48,7 +50,7 @@ Cloudflare Access like `ip.bea.sh/admin`. It has three tabs:
 
 - **Pastes**: active pastes, newest first, with size, language, burn and
   encryption flags, expiry, creator IP and country, and whether they came from
-  the web editor or the command line. Search by ID prefix or exact IP, preview
+  the web editor, the command line, or an AI agent over MCP. Search by ID prefix or exact IP, preview
   a paste (previews never consume burn-after-reading pastes), delete one paste,
   or delete every paste from an IP.
 - **Statistics**: active pastes, storage used, distinct creator IPs, all-time

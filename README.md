@@ -19,6 +19,13 @@ The serverless deployment at [paste.bea.sh](https://paste.bea.sh) uses a Cloudfl
 Worker and D1 while preserving this project's UI and API. Build, deployment,
 verification, and rollback instructions are in [cloudflare/README.md](cloudflare/README.md).
 
+## AI agents
+
+Agents can discover the service through `/llms.txt`, `/openapi.json`, and
+`/.well-known/api-catalog`, and use it as an MCP server at `/mcp`
+(`claude mcp add --transport http paste https://paste.bea.sh/mcp`). `POST /` returns
+JSON with `Accept: application/json`. See [API.md](API.md#ai-agents).
+
 ## Docker, Docker Compose, and Kubernetes
 
 The container image `ghcr.io/behnambagheri/pastebin` runs the same code as the

@@ -61,6 +61,15 @@ READ AND DELETE
   curl -fsS -o paste.bin '__BASE__/download/<id>'
   curl -fsS -X DELETE '__BASE__/<id>'
 
+AI AGENTS
+  __BASE__/llms.txt        Guide for LLMs and agents
+  __BASE__/openapi.json    OpenAPI 3.1 description
+  __BASE__/mcp             MCP server (Streamable HTTP, no sign-in)
+  Add it to Claude Code:
+    claude mcp add --transport http paste __BASE__/mcp
+  Send -H 'Accept: application/json' on POST / for a JSON reply with
+  id, url, raw_url, download_url, and expires_at.
+
 NOTES
   -q ignores ~/.curlrc, -f fails on HTTP errors, -sS hides progress but
   keeps errors, and -w '\n' ends the printed link with a newline.
