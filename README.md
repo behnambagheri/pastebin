@@ -149,11 +149,9 @@ docker pull mkaczanowski/pastebin:latest
 docker run --init --network host mkaczanowski/pastebin --address localhost --port 8000
 ```
 
-ARM images:
-```
-docker pull mkaczanowski/pastebin:armv7
-docker pull mkaczanowski/pastebin:armv8
-```
+For ARM, use `ghcr.io/behnambagheri/pastebin`, which is published for
+`linux/arm64` (see above). This repository no longer builds the upstream
+armv7/armv8 Rust images for Docker Hub.
 
 Compose setup:
 ```
