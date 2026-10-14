@@ -105,8 +105,44 @@ async function cryptoDecrypt(ciphertextB64, password) {
         apply();
     }
 
+    // ── Usage dialog ─────────────────────────────────────────────────────────
+    function initUsage() {
+        var dialog = byId("usage-dialog");
+        if (!dialog) return;
+
+        var base = window.location.origin + uri_prefix;
+        document.querySelectorAll("[data-usage-base]").forEach(function (node) {
+            node.textContent = base;
+        });
+
+        document.querySelectorAll("[data-open-usage]").forEach(function (button) {
+            button.addEventListener("click", function () { dialog.showModal(); });
+        });
+        if (window.location.hash === "#usage") dialog.showModal();
+
+        dialog.querySelectorAll("[data-copy-code]").forEach(function (button) {
+            var label = button.querySelector("span");
+            button.addEventListener("click", function () {
+                // Drop the "$ " prompts and sample output so copied commands run as-is.
+                var lines = button.parentElement.querySelector("code").textContent.split("\n");
+                var hasPrompt = lines.some(function (line) { return line.indexOf("$ ") === 0; });
+                var code = !hasPrompt ? lines.join("\n") : lines.filter(function (line, index) {
+                    return line.indexOf("$ ") === 0 || (index > 0 && /\\$/.test(lines[index - 1]));
+                }).map(function (line) { return line.replace(/^\$ /, ""); }).join("\n");
+                navigator.clipboard.writeText(code).then(function () {
+                    label.textContent = "Copied!";
+                }, function () {
+                    label.textContent = "Failed";
+                }).then(function () {
+                    setTimeout(function () { label.textContent = "Copy"; }, 1200);
+                });
+            });
+        });
+    }
+
     function init() {
         initTheme();
+        initUsage();
 
         var codeBlock = byId("pastebin-code-block");
         var textarea = byId("content-textarea");

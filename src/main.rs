@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use rocket::config::{Config, LogLevel};
 use rocket::data::{Data, ToByteUnit};
-use rocket::http::{ContentType, Status};
+use rocket::http::{Accept, ContentType, Status};
 use rocket::request::{FromRequest, Outcome, Request};
 use rocket::response::{self, Responder, Response};
 use rocket::{delete, get, post, routes};
@@ -456,9 +456,33 @@ async fn get_static<'r>(
     )
 }
 
+fn usage_text(plugin_manager: &PluginManager, base_url: &str) -> (ContentType, String) {
+    let guide = String::from_utf8_lossy(plugin_manager.static_resources().get("/static/usage.txt").unwrap());
+    (ContentType::Plain, guide.replace("__BASE__", base_url))
+}
+
+#[get("/usage")]
+fn get_usage(
+    cfg: &State<PastebinConfig>,
+    plugin_manager: &State<PluginManager>,
+    req_host: Option<RequestHost>,
+) -> (ContentType, String) {
+    usage_text(plugin_manager, &get_url(cfg, req_host))
+}
+
+/// Browsers are sent to the editor; curl, wget, and scripts get the plain-text guide.
 #[get("/")]
-fn index(cfg: &State<PastebinConfig>) -> rocket::response::Redirect {
-    rocket::response::Redirect::to(format!("{}/new", cfg.uri_prefix))
+fn index(
+    cfg: &State<PastebinConfig>,
+    plugin_manager: &State<PluginManager>,
+    req_host: Option<RequestHost>,
+    accept: Option<&Accept>,
+) -> rocket::Either<rocket::response::Redirect, (ContentType, String)> {
+    if accept.is_some_and(|accept| accept.media_types().any(|media| media.is_html())) {
+        rocket::Either::Left(rocket::response::Redirect::to(format!("{}/new", cfg.uri_prefix)))
+    } else {
+        rocket::Either::Right(usage_text(plugin_manager, &get_url(cfg, req_host)))
+    }
 }
 
 fn rocket_instance(pastebin_config: PastebinConfig) -> rocket::Rocket<rocket::Build> {
@@ -557,7 +581,7 @@ fn rocket_instance(pastebin_config: PastebinConfig) -> rocket::Rocket<rocket::Bu
         .manage(ui_expiry_default)
         .mount(
             if uri_prefix.is_empty() { "/" } else { &uri_prefix },
-            routes![index, create, remove, view_paste, get_new, get_raw, get_binary, get_static],
+            routes![index, get_usage, create, remove, view_paste, get_new, get_raw, get_binary, get_static],
         )
 }
 
@@ -603,6 +627,32 @@ mod tests {
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.content_type(), Some(ContentType::HTML));
         assert!(response.into_string().unwrap().contains("random_test_data_to_be_checked"));
+    }
+
+    #[test]
+    fn usage_guide_is_plain_text_with_service_url() {
+        let (client, _tmp) = create_client();
+        let response = client
+            .get("/usage")
+            .header(rocket::http::Header::new("Host", "paste.example.com"))
+            .dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.content_type(), Some(ContentType::Plain));
+        let body = response.into_string().unwrap();
+        assert!(body.contains("--data-binary @- 'http://paste.example.com/'"));
+        assert!(!body.contains("__BASE__"));
+    }
+
+    #[test]
+    fn index_serves_usage_to_cli_and_redirects_browsers() {
+        let (client, _tmp) = create_client();
+        let cli = client.get("/").header(rocket::http::Header::new("Accept", "*/*")).dispatch();
+        assert_eq!(cli.status(), Status::Ok);
+        assert!(cli.into_string().unwrap().starts_with("Paste - Usage"));
+
+        let browser = client.get("/").header(Accept::HTML).dispatch();
+        assert_eq!(browser.status(), Status::SeeOther);
+        assert_eq!(browser.headers().get_one("Location"), Some("/new"));
     }
 
     #[test]
@@ -772,7 +822,7 @@ mod tests {
     #[test]
     fn uri_prefix_index_redirects_to_prefix_new() {
         let (client, _tmp) = create_client_with_prefix("/paste");
-        let response = client.get("/paste/").dispatch();
+        let response = client.get("/paste/").header(Accept::HTML).dispatch();
         assert_eq!(response.status(), Status::SeeOther);
         let location = response.headers().get_one("Location").unwrap();
         assert_eq!(location, "/paste/new");

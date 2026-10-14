@@ -29,7 +29,7 @@ async function create(body, query = "") {
 }
 
 test("daisyUI page renders, static resources load, and errors use the UI", async () => {
-  const root = await request("/", { redirect: "manual" });
+  const root = await request("/", { redirect: "manual", headers: { Accept: "text/html,*/*" } });
   assert.equal(root.status, 303);
   assert.equal(root.headers.get("location"), "/new");
   const page = await request("/new");
@@ -42,6 +42,15 @@ test("daisyUI page renders, static resources load, and errors use the UI", async
   assert.ok(!html.includes("{{"));
   const js = await request("/static/custom.js");
   assert.equal(await js.text(), await readFile(new URL("../../static/custom.js", import.meta.url), "utf8"));
+  assert.match(html, /id="usage-dialog"/);
+  const guide = await request("/usage");
+  assert.equal(guide.headers.get("content-type"), "text/plain; charset=utf-8");
+  const text = await guide.text();
+  assert.match(text, /^Paste - Usage/);
+  assert.ok(!text.includes("__BASE__"));
+  const cli = await request("/", { redirect: "manual", headers: { Accept: "*/*" } });
+  assert.equal(cli.status, 200);
+  assert.equal(await cli.text(), text);
   const missing = await request("/missing");
   assert.equal(missing.status, 404);
   assert.match(await missing.text(), /The page you are looking for was not found/);

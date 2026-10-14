@@ -9,7 +9,8 @@ pub fn new(plugins: Vec<Box<dyn plugin::Plugin>>) -> plugin::PluginManager {
     "/static/index.html" => "../static/index.html",
     "/static/custom.js" => "../static/custom.js",
     "/static/style.css" => "../static/style.css",
-    "/static/favicon.ico" => "../static/favicon.ico"
+    "/static/favicon.ico" => "../static/favicon.ico",
+    "/static/usage.txt" => "../static/usage.txt"
     );
 
     let base_css_imports = vec!["/static/style.css"];

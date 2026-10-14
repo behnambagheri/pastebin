@@ -1,0 +1,67 @@
+Paste - Usage
+=============
+__BASE__
+
+QUICK START
+  echo 'hello' | curl -q -fsSL -w '\n' --data-binary @- '__BASE__/'
+  curl -q -fsSL -w '\n' --data-binary @notes.txt '__BASE__/'
+  The response is the link to the new paste.
+
+ENDPOINTS
+  POST   /                Create a paste from the request body; returns its link
+  GET    /<id>            View a paste in the browser (highlighted)
+  GET    /raw/<id>        Paste contents as text/plain
+  GET    /download/<id>   Paste contents as a file download
+  DELETE /<id>            Delete a paste
+  GET    /new             Web editor
+  GET    /usage           This guide
+
+CREATE OPTIONS (query string on POST /)
+  ttl=<seconds>           Expire after this many seconds (0 = never, default)
+  burn=true               Delete the paste after it is read once
+  lang=<language>         Highlighting in the web view, e.g. bash, python, json
+  curl -q -fsSL -w '\n' --data-binary @- '__BASE__/?ttl=3600&burn=true&lang=bash'
+
+SHELL FUNCTIONS
+  Each function uploads stdin, or a file when one is given:
+    cat notes.txt | pastebin
+    pastebin notes.txt
+
+  fish  (save with: funcsave pastebin)
+    function pastebin --description 'Upload stdin or a file to Paste'
+        set -l source -
+        set -q argv[1]; and set source $argv[1]
+        curl -q -fsSL -w '\n' --data-binary "@$source" '__BASE__/'
+    end
+
+  zsh (~/.zshrc) and bash (~/.bashrc)
+    pastebin() {
+      curl -q -fsSL -w '\n' --data-binary "@${1:--}" '__BASE__/'
+    }
+
+PYTHON (standard library only)
+  import urllib.parse, urllib.request
+
+  def paste(text, ttl=0, burn=False, lang="markup"):
+      query = urllib.parse.urlencode(
+          {"ttl": ttl, "burn": str(burn).lower(), "lang": lang})
+      request = urllib.request.Request(
+          "__BASE__/?" + query, data=text.encode(), method="POST",
+          headers={"Content-Type": "text/plain"})
+      with urllib.request.urlopen(request) as response:
+          return response.read().decode().strip()
+
+  print(paste("hello from Python", ttl=3600, lang="python"))
+
+READ AND DELETE
+  curl -fsS '__BASE__/raw/<id>'
+  curl -fsS -o paste.bin '__BASE__/download/<id>'
+  curl -fsS -X DELETE '__BASE__/<id>'
+
+NOTES
+  -q ignores ~/.curlrc, -f fails on HTTP errors, -sS hides progress but
+  keeps errors, and -w '\n' ends the printed link with a newline.
+  Pastes are limited to 8 MiB. Anyone with a paste link can read or
+  delete it. Password encryption happens in the browser, so pastes sent
+  from the command line are stored as plain text.
+  Open __BASE__/new in a browser for the editor.

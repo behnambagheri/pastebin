@@ -1,4 +1,9 @@
 ## REST API
+### GET /usage
+Returns a plain-text usage guide with command-line and code examples. `GET /`
+returns the same guide when the request does not accept `text/html`; browsers
+are redirected to `/new`.
+
 ### GET /:id
 Returns the contents of selected paste (assuming paste exists, otherwise returns 404)
 

@@ -109,6 +109,11 @@ echo "hello World" | pastebin
 # http://localhost:8000/T9kGrI5aNkI4Z-PelmQ5U
 ```
 
+`GET /usage` returns a plain-text guide (curl, fish, zsh, bash, and Python
+examples) built from `static/usage.txt`, and so does `GET /` for clients that
+do not accept HTML, such as `curl http://localhost:8000/`. Browsers are still
+redirected to the editor, which has the same guide in its Usage dialog.
+
 ## Nginx (optional)
 The service serves `/static` files from memory. To offload caching and add compression:
 

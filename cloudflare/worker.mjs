@@ -148,6 +148,15 @@ function page(env, values = {}, status = 200) {
   return response(render(data), status, "text/html; charset=utf-8");
 }
 
+function acceptsHtml(request) {
+  return (request.headers.get("Accept") || "").includes("text/html");
+}
+
+function usage(url) {
+  const guide = new TextDecoder().decode(decode(assets["/static/usage.txt"]));
+  return response(guide.replaceAll("__BASE__", url.origin), 200, "text/plain; charset=utf-8");
+}
+
 function missing(env) { return page(env, { is_error: true }, 404); }
 
 async function route(request, env) {
@@ -160,6 +169,8 @@ async function route(request, env) {
     return response(null);
   }
   if (method !== "GET" && method !== "HEAD") return response("Method not allowed.", 405, undefined, { Allow: "GET, HEAD, POST, DELETE" });
+  // Browsers get the editor; curl, wget, and scripts get the plain-text guide.
+  if (path === "/usage" || (path === "/" && !acceptsHtml(request))) return usage(url);
   if (path === "/") return response(null, 303, undefined, { Location: "/new" });
   if (path.startsWith("/static/")) {
     const asset = assets[path];
