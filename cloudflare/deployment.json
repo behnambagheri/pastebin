@@ -9,11 +9,11 @@
   "cron": "*/15 * * * *",
   "current": {
     "date": "2026-10-14",
-    "commit": "0000592",
+    "commit": "0970670",
     "deployed_with": "wrangler deploy",
-    "deployment_id": "59ff2ce4-835e-47cb-ad6a-7bd4e5946e10",
-    "version_id": "33d9b0fb-e684-4856-913b-44d161eaec82",
-    "worker_sha256": "829098ba4e081f19899983a9a8bff5e6ffc0b63068dd3f6eb65be384b91f07fa",
+    "deployment_id": "6e611e2c-f043-44a2-8a33-4fd7c05060e3",
+    "version_id": "514473e3-e58a-43e5-a38c-a41acad2d50a",
+    "worker_sha256": "49ab3c9d811dd6c4dbf17d947ed697e697f23e389fb91d19bd67c92febc6f0f7",
     "migrations_applied": [
       "0001_pastes.sql",
       "0002_admin.sql"
@@ -28,7 +28,7 @@
       "PASTE_ACCESS_AUD",
       "PASTE_ADMIN_EMAILS"
     ],
-    "ui": "daisyUI 5 / Tailwind CSS 4 with bea themes; content-hashed static URLs; usage guide at /usage; admin area at /admin",
+    "ui": "daisyUI 5 / Tailwind CSS 4 with bea themes; content-hashed static URLs; usage guide at /usage; admin area at /admin; agent discovery at /llms.txt, /openapi.json, /.well-known/api-catalog; MCP server at /mcp",
     "admin": {
       "path": "paste.bea.sh/admin",
       "access_app_id": "ef1f45b3-52a8-43ab-a2e1-ea6fa75e526c",
@@ -39,7 +39,7 @@
     },
     "verification": {
       "local_tests": {
-        "worker_and_server": 25,
+        "worker_and_server": 29,
         "rust": 46
       },
       "production_smoke": "passed",
@@ -49,7 +49,8 @@
       ],
       "paste_metadata": "new paste recorded size, client, country, creator IP, and 30-day TTL; test paste deleted",
       "signed_in_dashboard": "confirmed by the administrator on production after Cloudflare Access sign-in",
-      "container": "image built and smoke-tested locally (read-only root, dropped capabilities, restart persistence, admin token sign-in); Helm chart linted and validated with kubeconform"
+      "container": "image built and smoke-tested locally (read-only root, dropped capabilities, restart persistence, admin token sign-in); Helm chart linted and validated with kubeconform",
+      "agents": "production: llms.txt, openapi.json, api-catalog, robots.txt and Link headers served; MCP initialize and create/read/delete round trip; JSON create response; test pastes deleted"
     }
   },
   "initial_deployment": {
