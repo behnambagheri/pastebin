@@ -77,6 +77,7 @@ SQLite allows a single writer, so the chart always runs one replica with a
 | `PASTE_ADMIN_TOKEN` | empty | Admin sign-in token, at least 32 characters. Empty disables `/admin`. |
 | `PASTE_ADMIN_TOKEN_FILE` | empty | Read the token from a file (Docker or Kubernetes secrets). |
 | `PASTE_PUBLIC_URL` | empty | Origin for paste links, e.g. `https://paste.example.com`. Empty uses the request host. |
+| `PASTE_CANONICAL_URL` | empty | Origin the editor names as canonical. Set it on a mirror to point search engines at the primary site. Empty uses the request host. |
 | `PASTE_TRUSTED_HEADERS` | empty | Comma-separated proxy headers to trust for the client IP, e.g. `X-Forwarded-For`. Only set headers your proxy overwrites. |
 | `PASTE_DEFAULT_TTL` | `2592000` | Default expiry in seconds (`0` = never). Admin settings override it. |
 | `PASTE_LISTEN` | `:8080` | Listen address. |

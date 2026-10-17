@@ -25,6 +25,8 @@ ingress:
 
 # Public origin used in paste links, e.g. https://paste.example.com. Empty uses the request host.
 publicUrl: ""
+# On a mirror, the primary site's origin (e.g. https://paste.bea.sh) for the canonical link.
+canonicalUrl: ""
 # Empty by default: only trust headers your own ingress or proxy overwrites, e.g. X-Forwarded-For.
 trustedHeaders: ""
 # Default expiry in seconds (2592000 = 30 days, 0 = never). Settings in /admin override it.

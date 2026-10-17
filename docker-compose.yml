@@ -19,6 +19,8 @@ services:
       PASTE_ADMIN_TOKEN: ${PASTE_ADMIN_TOKEN:-}
       # Public origin used in paste links, e.g. https://paste.example.com.
       PASTE_PUBLIC_URL: ${PASTE_PUBLIC_URL:-}
+      # On a mirror, the primary site's origin for the canonical link.
+      PASTE_CANONICAL_URL: ${PASTE_CANONICAL_URL:-}
       # Proxy headers to trust for the client IP, e.g. X-Forwarded-For. Empty trusts none.
       PASTE_TRUSTED_HEADERS: ${PASTE_TRUSTED_HEADERS:-}
       # Default expiry in seconds (2592000 = 30 days, 0 = never). Admin settings override it.

@@ -122,5 +122,15 @@ test("configuration rejects short tokens and reads token files", () => {
   writeFileSync(file, `${TOKEN}\n`);
   assert.equal(serverConfig({ PASTE_ADMIN_TOKEN_FILE: file }).workerEnv.PASTE_ADMIN_TOKEN, TOKEN);
   assert.throws(() => serverConfig({ PASTE_PUBLIC_URL: "https://paste.example.com/sub" }), /without a path/);
+  assert.throws(() => serverConfig({ PASTE_CANONICAL_URL: "https://paste.example.com/sub" }), /without a path/);
   assert.deepEqual(serverConfig({ PASTE_LISTEN: "[::]:9000" }).host, "::");
+});
+
+test("a mirror names the primary site as canonical on the editor", async () => {
+  const { base, close } = await serve({ PASTE_CANONICAL_URL: "https://paste.bea.sh" });
+  try {
+    const editor = await (await fetch(`${base}/new`)).text();
+    assert.match(editor, /<link rel="canonical" href="https:\/\/paste\.bea\.sh\/new" \/>/);
+    assert.match(editor, /<meta property="og:url" content="https:\/\/paste\.bea\.sh\/new" \/>/);
+  } finally { await close(); }
 });

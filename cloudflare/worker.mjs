@@ -244,7 +244,9 @@ async function mcp(request, env, url) {
 }
 
 // Search-engine metadata for the editor: canonical URL, social previews, and structured data.
-function search(origin) {
+// CANONICAL_ORIGIN lets a mirror (e.g. one hosted for domestic access) name the primary site instead.
+function search(origin, env) {
+  origin = (env.CANONICAL_ORIGIN || origin).replace(/\/+$/, "");
   const canonical = `${origin}/new`;
   const app = {
     "@context": "https://schema.org", "@type": "WebApplication", name: "Paste", url: canonical,
@@ -297,7 +299,7 @@ async function route(request, env) {
     const params = url.searchParams;
     const values = { is_editable: true, level: params.get("level") || "secondary", glyph: params.get("glyph") || "", msg: params.get("msg") || "" };
     // Only the plain editor is indexed; notices, clones, and pastes are private by link.
-    if (!url.search) Object.assign(values, search(url.origin));
+    if (!url.search) Object.assign(values, search(url.origin, env));
     const link = params.get("url");
     if (link) {
       try {

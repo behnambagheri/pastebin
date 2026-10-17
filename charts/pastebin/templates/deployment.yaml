@@ -56,6 +56,10 @@ spec:
               value: /var/lib/paste
             - name: PASTE_PUBLIC_URL
               value: {{ .Values.publicUrl | quote }}
+            {{- with .Values.canonicalUrl }}
+            - name: PASTE_CANONICAL_URL
+              value: {{ . | quote }}
+            {{- end }}
             - name: PASTE_TRUSTED_HEADERS
               value: {{ .Values.trustedHeaders | quote }}
             - name: PASTE_DEFAULT_TTL

@@ -32,6 +32,13 @@ export function serverConfig(env = process.env) {
       throw new Error("PASTE_PUBLIC_URL must be an http(s) origin without a path, such as https://paste.example.com");
     }
   }
+  let canonicalUrl = null;
+  if (env.PASTE_CANONICAL_URL) {
+    canonicalUrl = new URL(env.PASTE_CANONICAL_URL);
+    if (!["http:", "https:"].includes(canonicalUrl.protocol) || canonicalUrl.pathname !== "/") {
+      throw new Error("PASTE_CANONICAL_URL must be an http(s) origin without a path, such as https://paste.example.com");
+    }
+  }
   return {
     host: separator > 0 ? listen.slice(0, separator).replace(/^\[|\]$/g, "") : undefined,
     port,
@@ -45,6 +52,7 @@ export function serverConfig(env = process.env) {
       ENABLE_MERMAID: env.PASTE_ENABLE_MERMAID || "false",
       UI_LINE_NUMBERS: env.PASTE_UI_LINE_NUMBERS || "false",
       PASTE_ADMIN_TOKEN: adminToken,
+      ...(canonicalUrl && { CANONICAL_ORIGIN: canonicalUrl.origin }),
     },
   };
 }
