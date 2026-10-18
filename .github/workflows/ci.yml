@@ -32,8 +32,6 @@ jobs:
           fi
       - run: npm ci
       - run: npm test
-      - name: Check that the committed stylesheet is up to date
-        run: git diff --exit-code ../static/style.css
       - name: Check shell syntax
         run: bash -n ../scripts/smoke-container.sh
       - uses: azure/setup-helm@v4.3.0

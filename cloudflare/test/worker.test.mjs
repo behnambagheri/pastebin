@@ -28,7 +28,7 @@ async function create(body, query = "") {
   return url.pathname.slice(1);
 }
 
-test("daisyUI page renders, static resources load, and errors use the UI", async () => {
+test("the design-system page renders, static resources load, and errors use the UI", async () => {
   const root = await request("/", { redirect: "manual", headers: { Accept: "text/html,*/*" } });
   assert.equal(root.status, 303);
   assert.equal(root.headers.get("location"), "/new");
@@ -40,6 +40,9 @@ test("daisyUI page renders, static resources load, and errors use the UI", async
   assert.match(html, /src="\/static\/custom.js\?v=[0-9a-f]{12}"/);
   assert.ok(!/cdnjs|jquery|bootstrap/i.test(html));
   assert.ok(!html.includes("{{"));
+  assert.match(html, /<html lang="en" data-product="blue">/);
+  assert.match(html, /class="bb-header"/);
+  assert.match(html, /href="https:\/\/bea\.sh"/);
   const js = await request("/static/custom.js");
   assert.equal(await js.text(), await readFile(new URL("../../static/custom.js", import.meta.url), "utf8"));
   assert.match(html, /id="usage-dialog"/);
@@ -55,6 +58,24 @@ test("daisyUI page renders, static resources load, and errors use the UI", async
   const missing = await request("/missing");
   assert.equal(missing.status, 404);
   assert.match(await missing.text(), /The page you are looking for was not found/);
+});
+
+test("the vendored design system is linked in order and served from this site", async () => {
+  const html = await (await request("/new")).text();
+  const stylesheets = [...html.matchAll(/<link href="([^"?]+)\?v=[0-9a-f]{12}" rel="stylesheet"/g)].map((match) => match[1]);
+  assert.deepEqual(stylesheets, ["/static/ds/v1/tokens.css", "/static/ds/v1/base.css", "/static/ds/v1/components.css", "/static/prism.css", "/static/style.css"]);
+  for (const name of ["tokens", "base", "components"]) {
+    const css = await request(`/static/ds/v1/${name}.css`);
+    assert.equal(css.status, 200);
+    assert.equal(css.headers.get("content-type"), "text/css; charset=utf-8");
+    assert.equal(await css.text(), await readFile(new URL(`../../static/ds/v1/${name}.css`, import.meta.url), "utf8"));
+  }
+  const font = await request("/static/ds/v1/fonts/space-grotesk/SpaceGrotesk-latin.woff2");
+  assert.equal(font.status, 200);
+  assert.equal(font.headers.get("content-type"), "font/woff2");
+  const mark = await request("/static/ds/mark.svg");
+  assert.equal(mark.headers.get("content-type"), "image/svg+xml");
+  assert.ok(!/bea\.sh\/ds\//.test(html), "the design system must not be hotlinked from bea.sh");
 });
 
 test("text, binary, download, clone, safe highlighting, and deletion", async () => {
@@ -179,7 +200,7 @@ test("maintenance mode and the banner come from saved settings", async () => {
     assert.equal(await blocked.text(), "Back at noon.");
     const html = await (await fetchPath("/new")).text();
     assert.match(html, /Back at noon\./);
-    assert.match(html, /alert-warning">[\s\S]*Scheduled upgrade today\./);
+    assert.match(html, /paste-alert--warning">[\s\S]*Scheduled upgrade today\./);
     assert.match(html, /id="send-btn"[^>]* disabled/);
   });
 });

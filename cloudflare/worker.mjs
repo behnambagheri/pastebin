@@ -193,7 +193,9 @@ async function page(env, values = {}, status = 200) {
     ui_expiry_default: label, max_size_label: settings.formatBytes(config.max_bytes),
     banner: config.banner, banner_level: config.banner_level,
     maintenance: config.maintenance ? config.maintenance_message : "",
-    css_imports: ["/static/style.css", "/static/prism.css"].map(versioned),
+    // The design system first, then Prism, then the site stylesheet that adjusts both.
+    css_imports: ["/static/ds/v1/tokens.css", "/static/ds/v1/base.css", "/static/ds/v1/components.css", "/static/prism.css", "/static/style.css"].map(versioned),
+    mark_url: versioned("/static/ds/mark.svg"),
     js_imports: ["/static/custom.js", "/static/prism.js"].map(versioned),
     js_init: ["var holder = document.getElementById('pastebin-code-block'); if (holder) { Prism.highlightElement(holder); }"],
     noindex: true,
@@ -292,7 +294,10 @@ async function route(request, env) {
   if (path.startsWith("/static/")) {
     const asset = assets[path];
     if (!asset) return missing(env);
-    const types = { css: "text/css; charset=utf-8", js: "application/javascript; charset=utf-8", ico: "image/x-icon", html: "text/html; charset=utf-8" };
+    const types = {
+      css: "text/css; charset=utf-8", js: "application/javascript; charset=utf-8", ico: "image/x-icon", html: "text/html; charset=utf-8",
+      svg: "image/svg+xml", woff2: "font/woff2", txt: "text/plain; charset=utf-8",
+    };
     return response(decode(asset), 200, types[path.split(".").pop()] || "application/octet-stream", { "Cache-Control": "public, max-age=86400" });
   }
   if (path === "/new") {

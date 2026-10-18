@@ -8,9 +8,9 @@ import adminPage, { loginPage } from "./generated/admin-page.mjs";
 const headers = {
   "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "same-origin", "X-Robots-Tag": "noindex, nofollow, noarchive",
-  "Content-Security-Policy": "default-src 'none'; style-src 'self'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  "Content-Security-Policy": "default-src 'none'; style-src 'self'; font-src 'self'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
 };
-const LOGIN_FAILED = '<div role="alert" class="alert alert-soft alert-error text-sm">That token is not valid.</div>';
+const LOGIN_FAILED = '<div role="alert" class="paste-alert paste-alert--error">That token is not valid.</div>';
 const PAGE_SIZE = 50;
 
 /** Either sign-in method: an admin token session (containers) or Cloudflare Access. */

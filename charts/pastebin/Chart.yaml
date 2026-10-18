@@ -1,6 +1,6 @@
 apiVersion: v2
 name: pastebin
-description: Paste — a pastebin with client-side encryption, burn-after-reading, a daisyUI interface, and an admin area
+description: Paste — a pastebin with client-side encryption, burn-after-reading, a web interface, and an admin area
 type: application
 version: 1.0.0
 appVersion: "0.2.0"

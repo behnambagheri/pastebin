@@ -15,7 +15,7 @@ self-host it on Cloudflare Workers, Docker, Docker Compose, or Kubernetes.
 - **Command-line friendly** — `curl`, shell aliases (bash, zsh, fish), Python, and a plain HTTP API.
 - **AI-agent ready** — an MCP server, `llms.txt`, and an OpenAPI 3.1 description.
 - **Admin dashboard** — moderation, statistics, expiry and size limits, maintenance mode.
-- **Light and dark themes**, responsive daisyUI interface.
+- **Light and dark themes**, responsive interface on the shared [Behnam Bagheri Design System](https://bea.sh/ds/).
 
 ```sh
 echo "hello world" | curl --data-binary @- https://paste.bea.sh/
@@ -42,7 +42,7 @@ JSON with `Accept: application/json`. See [API.md](API.md#ai-agents).
 ## Docker, Docker Compose, and Kubernetes
 
 The container image `ghcr.io/behnambagheri/pastebin` runs the same code as the
-Cloudflare Worker (daisyUI UI, `/usage` guide, and admin area) on Node.js, with
+Cloudflare Worker (web UI, `/usage` guide, and admin area) on Node.js, with
 SQLite storage in `/var/lib/paste` instead of D1. CI publishes it for
 `linux/amd64` and `linux/arm64` on every push to `master` (`latest`, `sha-…`)
 and on version tags. The original Rust server is still built by `Dockerfile.rust`.
@@ -120,7 +120,7 @@ Rust-based pastebin with [RocksDB](https://rocksdb.org/) as storage. Notable imp
 * **REST API** — add/delete pastes via any HTTP client (see [API.md](API.md))
 * **[RocksDB compaction filter](https://github.com/facebook/rocksdb/wiki/Compaction-Filter)** — expired pastes are automatically removed at compaction time
 * **[FlatBuffers](https://google.github.io/flatbuffers/)** — paste data serialized with zero-copy access
-* **UI** — plain HTML styled with [daisyUI](https://daisyui.com/) on [Tailwind CSS](https://tailwindcss.com/) (prebuilt into `static/style.css` from `cloudflare/style.css`), vanilla JavaScript, and [Prism.js](https://prismjs.com/)
+* **UI** — plain HTML on the [Behnam Bagheri Design System](https://bea.sh/ds/) (vendored in `static/ds/`, refreshed with `scripts/sync-ds.sh`; site rules in `static/style.css`), vanilla JavaScript, and [Prism.js](https://prismjs.com/)
 * **encryption** — password-protected pastes are AES encrypted/decrypted in the browser via [CryptoJS](https://code.google.com/archive/p/crypto-js/)
 
 ### Plugins

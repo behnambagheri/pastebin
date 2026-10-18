@@ -10,10 +10,25 @@ pub fn new(plugins: Vec<Box<dyn plugin::Plugin>>) -> plugin::PluginManager {
     "/static/custom.js" => "../static/custom.js",
     "/static/style.css" => "../static/style.css",
     "/static/favicon.ico" => "../static/favicon.ico",
-    "/static/usage.txt" => "../static/usage.txt"
+    "/static/usage.txt" => "../static/usage.txt",
+    // Behnam Bagheri Design System, vendored by scripts/sync-ds.sh.
+    "/static/ds/mark.svg" => "../static/ds/mark.svg",
+    "/static/ds/v1/tokens.css" => "../static/ds/v1/tokens.css",
+    "/static/ds/v1/base.css" => "../static/ds/v1/base.css",
+    "/static/ds/v1/components.css" => "../static/ds/v1/components.css",
+    "/static/ds/v1/fonts/space-grotesk/SpaceGrotesk-latin.woff2" => "../static/ds/v1/fonts/space-grotesk/SpaceGrotesk-latin.woff2",
+    "/static/ds/v1/fonts/space-grotesk/SpaceGrotesk-latin-ext.woff2" => "../static/ds/v1/fonts/space-grotesk/SpaceGrotesk-latin-ext.woff2",
+    "/static/ds/v1/fonts/space-grotesk/SpaceGrotesk-vietnamese.woff2" => "../static/ds/v1/fonts/space-grotesk/SpaceGrotesk-vietnamese.woff2",
+    "/static/ds/v1/fonts/vazirmatn/Vazirmatn-variable.woff2" => "../static/ds/v1/fonts/vazirmatn/Vazirmatn-variable.woff2"
     );
 
-    let base_css_imports = vec!["/static/style.css"];
+    // The design system loads before the site stylesheet.
+    let base_css_imports = vec![
+        "/static/ds/v1/tokens.css",
+        "/static/ds/v1/base.css",
+        "/static/ds/v1/components.css",
+        "/static/style.css",
+    ];
 
     let base_js_imports = vec!["/static/custom.js"];
 

@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:css": "node build-css.mjs",
     "build": "node build.mjs",
     "test": "npm run build && node --test test/*.test.mjs",
     "smoke": "node scripts/smoke.mjs"
@@ -13,12 +12,8 @@
     "jose": "6.2.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "4.3.3",
-    "daisyui": "5.7.47",
     "esbuild": "0.28.2",
     "miniflare": "4.20260730.0",
-    "postcss": "8.5.29",
-    "tailwindcss": "4.3.3",
     "wrangler": "4.151.0"
   }
 }

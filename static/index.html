@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-product="blue">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -27,154 +27,130 @@
     <link rel="service-desc" type="application/vnd.oai.openapi+json" href="/openapi.json" />
     {{/if}}
     <script>
-      // Apply the saved theme before first paint to avoid a flash of the wrong theme.
+      // Apply a saved theme before first paint; without one the design system follows the OS.
+      // "bb-theme" is shared with bea.sh and the other sites on the design system.
       (function () {
-        var preference = "system";
         try {
-          var saved = localStorage.getItem("paste-theme");
-          if (saved === "light" || saved === "dark") preference = saved;
+          var saved = localStorage.getItem("bb-theme");
+          if (saved === "light" || saved === "dark") document.documentElement.setAttribute("data-theme", saved);
         } catch (e) {
-          // Keep system mode when browser storage is unavailable.
+          // Follow the OS theme when browser storage is unavailable.
         }
-        var dark = preference === "dark" ||
-          (preference === "system" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
-        document.documentElement.setAttribute("data-theme-preference", preference);
-        document.documentElement.setAttribute("data-theme", dark ? "bea-dark" : "bea");
       })();
     </script>
     {{#each css_imports as |url|}}
     <link href="{{{format_url ../uri_prefix url}}}" rel="stylesheet" />
     {{/each}}
   </head>
-  <body class="flex min-h-screen flex-col bg-base-200 text-base-content">
-    <div class="mx-auto w-full max-w-6xl px-3 pt-3 sm:px-6">
-    <header class="rounded-box border border-base-300 bg-base-100/90 shadow-sm backdrop-blur">
-      <nav aria-label="Main navigation" class="navbar flex-wrap gap-2 px-4 py-3 sm:gap-3 sm:px-6">
-        <div class="navbar-start w-auto grow gap-3">
-          <a href="{{uri_prefix}}/new" class="flex shrink-0 items-center gap-2" aria-label="Paste home">
-            <svg aria-hidden="true" class="size-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2" /><path d="M8 12h8M8 16h5" /></svg>
-            <span class="text-lg font-semibold tracking-tight">Paste</span>
-          </a>
-          <a href="https://bea.sh" class="link link-hover hidden border-l border-base-300 pl-4 text-sm text-base-content/60 sm:block">by bea.sh <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="navbar-end ml-auto w-auto gap-1 sm:gap-2">
-          <a href="{{uri_prefix}}/new" class="btn btn-ghost btn-sm">
-            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
-            New
-          </a>
-          <button type="button" data-open-usage aria-haspopup="dialog" aria-controls="usage-dialog" aria-label="Usage" title="Command-line and code usage" class="btn btn-ghost btn-sm btn-square sm:w-auto sm:px-3">
-            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 16h7" /></svg>
-            <span class="hidden sm:inline">Usage</span>
-          </button>
-          <a href="https://github.com/behnambagheri/pastebin" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" title="GitHub repository" class="btn btn-ghost btn-sm btn-square sm:w-auto sm:px-3">
-            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .75a11.25 11.25 0 0 0-3.56 21.92c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 1.72 2.63 1.22 3.27.93.1-.72.4-1.22.72-1.5-2.5-.28-5.13-1.25-5.13-5.56 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.15a10.8 10.8 0 0 1 5.63 0c2.15-1.45 3.09-1.15 3.09-1.15.61 1.55.23 2.7.11 2.98.73.79 1.16 1.79 1.16 3.02 0 4.32-2.63 5.28-5.14 5.56.4.35.76 1.03.76 2.09v3.09c0 .3.2.65.77.54A11.25 11.25 0 0 0 12 .75Z" /></svg>
-            <span class="hidden sm:inline">GitHub</span>
-          </a>
-          <div role="group" aria-label="Color theme" class="flex gap-1 rounded-field border border-base-300 p-1">
-            <button type="button" data-theme-preference="system" aria-label="Use system theme" title="Use system theme" aria-pressed="true" class="btn btn-ghost btn-xs btn-square sm:btn-sm">
-              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
-            </button>
-            <button type="button" data-theme-preference="light" aria-label="Use light theme" title="Use light theme" aria-pressed="false" class="btn btn-ghost btn-xs btn-square sm:btn-sm">
-              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></svg>
-            </button>
-            <button type="button" data-theme-preference="dark" aria-label="Use dark theme" title="Use dark theme" aria-pressed="false" class="btn btn-ghost btn-xs btn-square sm:btn-sm">
-              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z" /></svg>
-            </button>
-          </div>
-        </div>
+  <body>
+    <header class="bb-header">
+      <div class="paste-brand">
+        <a class="bb-brand" href="https://bea.sh" title="bea.sh — Behnam Bagheri">
+          <img class="bb-brand-mark" src="{{#if mark_url}}{{{mark_url}}}{{else}}{{uri_prefix}}/static/ds/mark.svg{{/if}}" width="36" height="36" alt="" />
+          <span>bea.sh</span>
+        </a>
+        <span class="paste-brand-divider" aria-hidden="true">/</span>
+        <a class="paste-brand-product" href="{{uri_prefix}}/new" aria-label="Paste home">Paste</a>
+      </div>
+      <nav class="bb-nav" aria-label="Main navigation">
+        <a href="{{uri_prefix}}/new" class="bb-nav-link">
+          <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+          New
+        </a>
+        <button type="button" data-open-usage aria-haspopup="dialog" aria-controls="usage-dialog" title="Command-line and code usage" class="bb-nav-link">
+          <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 16h7" /></svg>
+          Usage
+        </button>
+        <a href="https://github.com/behnambagheri/pastebin" target="_blank" rel="noopener noreferrer" title="GitHub repository" class="bb-nav-link">
+          <svg aria-hidden="true" class="paste-icon paste-icon--fill" viewBox="0 0 24 24"><path d="M12 .75a11.25 11.25 0 0 0-3.56 21.92c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 1.72 2.63 1.22 3.27.93.1-.72.4-1.22.72-1.5-2.5-.28-5.13-1.25-5.13-5.56 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.15a10.8 10.8 0 0 1 5.63 0c2.15-1.45 3.09-1.15 3.09-1.15.61 1.55.23 2.7.11 2.98.73.79 1.16 1.79 1.16 3.02 0 4.32-2.63 5.28-5.14 5.56.4.35.76 1.03.76 2.09v3.09c0 .3.2.65.77.54A11.25 11.25 0 0 0 12 .75Z" /></svg>
+          GitHub
+        </a>
+        <button id="themeButton" type="button" class="bb-theme-toggle" aria-label="Switch theme" title="Switch theme">
+          <svg class="bb-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0-5a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 17a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1ZM3 11h1a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2Zm17 0h1a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2ZM5.64 4.22l.71.71a1 1 0 0 1-1.42 1.42l-.7-.71a1 1 0 0 1 1.41-1.42Zm12.02 12.02.71.71a1 1 0 0 1-1.42 1.41l-.7-.7a1 1 0 0 1 1.41-1.42ZM19.78 5.64l-.71.71a1 1 0 0 1-1.42-1.42l.71-.7a1 1 0 0 1 1.42 1.41ZM7.76 17.66l-.71.71a1 1 0 0 1-1.41-1.42l.7-.71a1 1 0 0 1 1.42 1.42Z" /></svg>
+          <svg class="bb-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.05 8.05 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Z" /></svg>
+        </button>
       </nav>
     </header>
-    </div>
 
-    <main class="mx-auto w-full max-w-6xl grow space-y-4 px-3 py-6 sm:px-6">
+    <main class="bb-container paste-main">
       {{# if is_error}}
-      <section class="card card-border bg-base-100 shadow-sm">
-        <div class="card-body items-center gap-4 py-16 text-center">
-          <p class="font-mono text-6xl font-semibold tracking-tight text-primary">404</p>
-          <h1 class="text-lg font-medium">The page you are looking for was not found.</h1>
-          <p class="max-w-md text-sm text-base-content/60">The paste may have expired, been burned after reading, or removed.</p>
-          <div class="card-actions">
-            <a href="{{uri_prefix}}/new" class="btn btn-primary">Create a new paste</a>
-          </div>
-        </div>
+      <section class="bb-card paste-panel paste-empty">
+        <p class="paste-empty-code">404</p>
+        <h1 class="paste-empty-title">The page you are looking for was not found.</h1>
+        <p class="paste-muted">The paste may have expired, been burned after reading, or removed.</p>
+        <a href="{{uri_prefix}}/new" class="bb-button bb-button--primary">Create a new paste</a>
       </section>
       {{ else }}
         {{#if banner}}
-        <div role="status" class="alert alert-soft alert-{{banner_level}}">
-          <svg aria-hidden="true" class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1ZM15.5 8.5a5 5 0 0 1 0 7" /></svg>
-          <span class="min-w-0 break-words">{{banner}}</span>
+        <div role="status" class="paste-alert paste-alert--{{banner_level}}">
+          <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1ZM15.5 8.5a5 5 0 0 1 0 7" /></svg>
+          <span class="paste-alert-text">{{banner}}</span>
         </div>
         {{/if}}
         {{#if is_editable}}{{#if maintenance}}
-        <div role="alert" class="alert alert-soft alert-warning">
-          <svg aria-hidden="true" class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
-          <span class="min-w-0 break-words">{{maintenance}}</span>
+        <div role="alert" class="paste-alert paste-alert--warning">
+          <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+          <span class="paste-alert-text">{{maintenance}}</span>
         </div>
         {{/if}}{{/if}}
         {{#if msg}}
         {{#if url}}
-        <section id="notice" role="status" class="card card-border border-success/40 bg-base-100 shadow-sm">
-          <div class="card-body gap-3 p-4 sm:p-5">
-            <div class="flex items-center justify-between gap-3">
-              <p class="flex items-center gap-2 font-medium">
-                <span aria-hidden="true" class="status status-success"></span>
-                {{msg}}
-              </p>
-              <button type="button" id="notice-close" class="btn btn-ghost btn-sm btn-square shrink-0" aria-label="Dismiss">
-              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        <section id="notice" role="status" class="bb-card paste-panel paste-created">
+          <div class="paste-created-head">
+            <p class="paste-created-title"><span aria-hidden="true" class="bb-signal-dot"></span>{{msg}}</p>
+            <button type="button" id="notice-close" class="bb-button bb-button--ghost bb-button--sm paste-icon-button" aria-label="Dismiss">
+              <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
-            </div>
-            <div class="join w-full">
-              <input id="notice-url" type="text" readonly value="{{url}}" aria-label="Paste link" class="input join-item w-full min-w-0 font-mono text-sm" />
-              <a href="{{url}}" class="btn join-item" title="Open paste">
-                <span class="hidden sm:inline">Open</span>
-                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
-              </a>
-              <button type="button" id="copy-url-btn" data-url="{{url}}" class="btn btn-primary join-item min-w-28">
-                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
-                <span>Copy link</span>
-              </button>
-            </div>
+          </div>
+          <div class="paste-link-row">
+            <input id="notice-url" type="text" readonly value="{{url}}" aria-label="Paste link" class="paste-input paste-mono" />
+            <a href="{{url}}" class="bb-button bb-button--secondary bb-button--sm" title="Open paste">
+              Open
+              <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+            </a>
+            <button type="button" id="copy-url-btn" data-url="{{url}}" class="bb-button bb-button--primary bb-button--sm">
+              <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
+              <span>Copy link</span>
+            </button>
           </div>
         </section>
         {{else}}
-        <div role="alert" id="notice" class="alert alert-soft alert-{{level}} flex items-center justify-between gap-3">
-          <span class="min-w-0 break-words">{{msg}}</span>
-          <button type="button" id="notice-close" class="btn btn-ghost btn-sm btn-square shrink-0" aria-label="Dismiss">
-              <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
-            </button>
+        <div role="alert" id="notice" class="paste-alert paste-alert--{{level}}">
+          <span class="paste-alert-text">{{msg}}</span>
+          <button type="button" id="notice-close" class="bb-button bb-button--ghost bb-button--sm paste-icon-button" aria-label="Dismiss">
+            <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
         </div>
         {{/if}}
         {{/if}}
 
-        <section class="card card-border bg-base-100 shadow-sm">
-          <div class="card-body gap-4 p-4 sm:p-6">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-                {{#if is_editable}}
-                <label class="flex flex-col gap-1">
-                  <span class="text-xs text-base-content/60">Expires</span>
-                  <select id="expiry-selector" class="select select-sm w-full sm:w-36" data-default="{{ui_expiry_default}}">
-                    {{#each ui_expiry_times}}
-                    <option value="{{1}}">{{0}}</option>
-                    {{/each}}
-                  </select>
-                </label>
-                <label class="flex flex-col gap-1">
-                  <span class="text-xs text-base-content/60">Burn after reading</span>
-                  <select id="burn-selector" class="select select-sm w-full sm:w-28">
-                    <option value="false" selected>No</option>
-                    <option value="true">Yes</option>
-                  </select>
-                </label>
-                <label class="flex flex-col gap-1">
-                  <span class="text-xs text-base-content/60">Password</span>
-                  <input id="pastebin-password" type="password" class="input input-sm w-full sm:w-44" placeholder="Optional" autocomplete="new-password" />
-                </label>
-                {{/if}}
-                <label class="flex flex-col gap-1">
-                  <span class="text-xs text-base-content/60">Language</span>
-                  <select id="language-selector" class="select select-sm w-full sm:w-48">
+        <section class="bb-card paste-panel">
+          <div class="paste-toolbar">
+            <div class="paste-fields">
+              {{#if is_editable}}
+              <label class="paste-field">
+                <span class="paste-label">Expires</span>
+                <select id="expiry-selector" class="paste-input" data-default="{{ui_expiry_default}}">
+                  {{#each ui_expiry_times}}
+                  <option value="{{1}}">{{0}}</option>
+                  {{/each}}
+                </select>
+              </label>
+              <label class="paste-field">
+                <span class="paste-label">Burn after reading</span>
+                <select id="burn-selector" class="paste-input">
+                  <option value="false" selected>No</option>
+                  <option value="true">Yes</option>
+                </select>
+              </label>
+              <label class="paste-field">
+                <span class="paste-label">Password</span>
+                <input id="pastebin-password" type="password" class="paste-input" placeholder="Optional" autocomplete="new-password" />
+              </label>
+              {{/if}}
+              <label class="paste-field paste-field--wide">
+                <span class="paste-label">Language</span>
+                <select id="language-selector" class="paste-input">
                     <option value="markup">Markup</option>
                     <option value="css">CSS</option>
                     <option value="clike">C-like</option>
@@ -328,121 +304,119 @@
                     <option value="xojo">Xojo (REALbasic)</option>
                     <option value="xquery">XQuery</option>
                     <option value="yaml">YAML</option>
-                  </select>
-                </label>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                {{#if is_created}}
-                <button id="copy-btn" type="button" class="btn btn-sm btn-primary">Copy</button>
-                {{#if (not is_burned)}}
-                <a class="btn btn-sm" href="{{uri_prefix}}/raw/{{pastebin_id}}">Raw</a>
-                <a class="btn btn-sm" href="{{uri_prefix}}/download/{{pastebin_id}}">Download</a>
-                <a class="btn btn-sm" href="{{uri_prefix}}/new?id={{pastebin_id}}" id="clone-btn">Clone</a>
-                <button id="remove-btn" type="button" class="btn btn-sm btn-error btn-outline">Remove</button>
-                {{/if}}
-                {{/if}}
-                {{#if is_editable}}
-                <button id="send-btn" type="button" class="btn btn-sm btn-primary"{{#if maintenance}} disabled{{/if}}>
-                  Create paste
-                  <kbd class="kbd kbd-xs hidden bg-primary-content/15 text-primary-content sm:inline-flex">⌘↵</kbd>
-                </button>
-                {{/if}}
-              </div>
+                </select>
+              </label>
             </div>
-
-            {{#if is_editable}}
-            <textarea autofocus id="content-textarea" class="textarea h-[60vh] min-h-64 w-full resize-y font-mono text-sm leading-relaxed" placeholder="Paste or type your text here…" spellcheck="false" aria-label="Paste content">{{pastebin_code}}</textarea>
-            <p id="send-status" role="status" class="min-h-5 text-sm text-base-content/60"></p>
-            {{/if}}
-            {{#if is_created or is_clone}}
-            <div id="paste-view" class="overflow-hidden rounded-field border border-base-300">
-              <pre class="max-h-[70vh] overflow-auto"><code id="pastebin-code-block" class="{{pastebin_cls}}">{{pastebin_code}}</code></pre>
+            <div class="paste-actions">
+              {{#if is_created}}
+              <button id="copy-btn" type="button" class="bb-button bb-button--primary bb-button--sm">Copy</button>
+              {{#if (not is_burned)}}
+              <a class="bb-button bb-button--secondary bb-button--sm" href="{{uri_prefix}}/raw/{{pastebin_id}}">Raw</a>
+              <a class="bb-button bb-button--secondary bb-button--sm" href="{{uri_prefix}}/download/{{pastebin_id}}">Download</a>
+              <a class="bb-button bb-button--secondary bb-button--sm" href="{{uri_prefix}}/new?id={{pastebin_id}}" id="clone-btn">Clone</a>
+              <button id="remove-btn" type="button" class="bb-button bb-button--secondary bb-button--sm paste-button--danger">Remove</button>
+              {{/if}}
+              {{/if}}
+              {{#if is_editable}}
+              <button id="send-btn" type="button" class="bb-button bb-button--primary bb-button--sm"{{#if maintenance}} disabled{{/if}}>
+                Create paste
+                <kbd class="paste-kbd">⌘↵</kbd>
+              </button>
+              {{/if}}
             </div>
-            {{/if}}
           </div>
+
+          {{#if is_editable}}
+          <textarea autofocus id="content-textarea" class="paste-input paste-editor" placeholder="Paste or type your text here…" spellcheck="false" aria-label="Paste content">{{pastebin_code}}</textarea>
+          <p id="send-status" role="status" class="paste-status"></p>
+          {{/if}}
+          {{#if is_created or is_clone}}
+          <div id="paste-view" data-theme="dark">
+            <pre class="bb-code"><code id="pastebin-code-block" class="{{pastebin_cls}}">{{pastebin_code}}</code></pre>
+          </div>
+          {{/if}}
         </section>
       {{/if}}
     </main>
 
-    <footer class="footer footer-vertical mx-auto max-w-6xl gap-3 px-3 py-8 text-sm text-base-content/60 sm:footer-horizontal sm:items-center sm:justify-between sm:px-6">
-      <aside>
+    <footer class="bb-footer">
+      <div class="paste-footer-about">
         <p>bea.sh Paste <span aria-hidden="true">·</span> v{{version}}</p>
-        <p class="text-xs">Based on <a href="https://github.com/mkaczanowski/pastebin" class="underline">mkaczanowski/pastebin</a>. Passwords encrypt pastes in your browser.</p>
-      </aside>
-      <nav class="flex flex-wrap gap-5" aria-label="Footer navigation">
-        <a href="https://bea.sh/" class="hover:underline">About</a>
-        <a href="https://bea.sh/#contact" class="hover:underline">Contact</a>
-        <a href="https://ip.bea.sh/" class="hover:underline">IPinfo</a>
-        <button type="button" data-open-usage aria-haspopup="dialog" aria-controls="usage-dialog" class="btn btn-link h-auto min-h-0 p-0 text-sm font-normal text-base-content/60 no-underline hover:underline">Usage</button>
-        <a href="{{uri_prefix}}/usage" class="hover:underline">Plain-text usage</a>
-        <a href="https://github.com/behnambagheri/pastebin/blob/master/API.md" class="hover:underline">API</a>
+        <p class="paste-footer-note">Based on <a href="https://github.com/mkaczanowski/pastebin">mkaczanowski/pastebin</a>. Passwords encrypt pastes in your browser.</p>
+      </div>
+      <nav class="paste-footer-links" aria-label="Footer navigation">
+        <a href="https://bea.sh/">About</a>
+        <a href="https://bea.sh/#contact">Contact</a>
+        <a href="https://ip.bea.sh/">IPinfo</a>
+        <button type="button" data-open-usage aria-haspopup="dialog" aria-controls="usage-dialog" class="paste-link-button">Usage</button>
+        <a href="{{uri_prefix}}/usage">Plain-text usage</a>
+        <a href="https://github.com/behnambagheri/pastebin/blob/master/API.md">API</a>
       </nav>
     </footer>
 
-    <dialog id="usage-dialog" class="modal" aria-labelledby="usage-title" aria-describedby="usage-intro">
-      <div class="modal-box max-h-[85dvh] w-full max-w-3xl overflow-y-auto">
-        <div class="mb-3 flex items-center justify-between gap-4">
-          <h2 id="usage-title" class="text-2xl font-semibold">Usage</h2>
-          <form method="dialog">
-            <button type="submit" aria-label="Close usage" class="btn btn-ghost btn-sm btn-square">
-              <svg aria-hidden="true" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="m6 6 12 12M6 18 18 6" /></svg>
-            </button>
-          </form>
-        </div>
-        <p id="usage-intro" class="mb-6 text-sm leading-relaxed text-base-content/65">Create pastes from your terminal or code. Each request returns the new paste's link. The same guide is available as plain text: <code class="font-mono">curl <span data-usage-base>https://paste.bea.sh</span>/usage</code></p>
-        <div class="space-y-6">
-          <section aria-labelledby="usage-quick-title" class="space-y-3">
-            <h3 id="usage-quick-title" class="text-lg font-semibold">Quick start</h3>
-            <div class="relative">
-                <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>$ echo 'hello' | curl -q -fsSL -w '\n' --data-binary @- '<span data-usage-base>https://paste.bea.sh</span>/'
+    <dialog id="usage-dialog" class="paste-dialog paste-dialog--wide" aria-labelledby="usage-title" aria-describedby="usage-intro">
+      <div class="paste-dialog-head">
+        <h2 id="usage-title">Usage</h2>
+        <form method="dialog">
+          <button type="submit" aria-label="Close usage" class="bb-button bb-button--ghost bb-button--sm paste-icon-button">
+            <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="m6 6 12 12M6 18 18 6" /></svg>
+          </button>
+        </form>
+      </div>
+      <p id="usage-intro" class="paste-muted">Create pastes from your terminal or code. Each request returns the new paste's link. The same guide is available as plain text: <code class="paste-inline-code">curl <span data-usage-base>https://paste.bea.sh</span>/usage</code></p>
+      <section aria-labelledby="usage-quick-title" class="paste-usage-section">
+        <h3 id="usage-quick-title">Quick start</h3>
+        <div class="bb-code-block">
+          <pre class="bb-code"><code>$ echo 'hello' | curl -q -fsSL -w '\n' --data-binary @- '<span data-usage-base>https://paste.bea.sh</span>/'
 <span data-usage-base>https://paste.bea.sh</span>/aBcD3fGh1jKlMn0pQrStU
 
 $ curl -q -fsSL -w '\n' --data-binary @notes.txt '<span data-usage-base>https://paste.bea.sh</span>/'</code></pre>
-                <button type="button" data-copy-code class="btn btn-ghost btn-xs absolute top-2 right-2"><svg aria-hidden="true" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg><span>Copy</span></button>
-              </div>
-          </section>
-          <section aria-labelledby="usage-shell-title" class="space-y-3">
-            <h3 id="usage-shell-title" class="text-lg font-semibold">Shell function and code</h3>
-            <p class="text-sm leading-relaxed text-base-content/65">Add a <code class="font-mono">pastebin</code> command that uploads stdin, or a file when one is given: <code class="font-mono">cat notes.txt | pastebin</code> or <code class="font-mono">pastebin notes.txt</code>.</p>
-            <div role="tablist" aria-label="Shell or language" class="tabs tabs-box">
-              <input type="radio" name="usage-shell" class="tab" aria-label="fish" checked />
-              <div class="tab-content space-y-2 pt-3">
-                <p class="text-sm text-base-content/65">Run once in fish; <code class="font-mono">funcsave</code> keeps it for new sessions.</p>
-                <div class="relative">
-                <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>function pastebin --description 'Upload stdin or a file to Paste'
+          <button type="button" data-copy-code class="bb-code-copy">Copy</button>
+        </div>
+      </section>
+      <section aria-labelledby="usage-shell-title" class="paste-usage-section">
+        <h3 id="usage-shell-title">Shell function and code</h3>
+        <p class="paste-muted">Add a <code class="paste-inline-code">pastebin</code> command that uploads stdin, or a file when one is given: <code class="paste-inline-code">cat notes.txt | pastebin</code> or <code class="paste-inline-code">pastebin notes.txt</code>.</p>
+        <div role="tablist" aria-label="Shell or language" class="paste-tabs">
+          <button type="button" role="tab" id="usage-tab-fish" aria-controls="usage-panel-fish" aria-selected="true" class="bb-nav-link">fish</button>
+          <button type="button" role="tab" id="usage-tab-zsh" aria-controls="usage-panel-zsh" aria-selected="false" tabindex="-1" class="bb-nav-link">zsh</button>
+          <button type="button" role="tab" id="usage-tab-bash" aria-controls="usage-panel-bash" aria-selected="false" tabindex="-1" class="bb-nav-link">bash</button>
+          <button type="button" role="tab" id="usage-tab-python" aria-controls="usage-panel-python" aria-selected="false" tabindex="-1" class="bb-nav-link">Python</button>
+        </div>
+        <div role="tabpanel" id="usage-panel-fish" aria-labelledby="usage-tab-fish" class="paste-tab-panel">
+          <p class="paste-muted">Run once in fish; <code class="paste-inline-code">funcsave</code> keeps it for new sessions.</p>
+          <div class="bb-code-block">
+            <pre class="bb-code"><code>function pastebin --description 'Upload stdin or a file to Paste'
     set -l source -
     set -q argv[1]; and set source $argv[1]
     curl -q -fsSL -w '\n' --data-binary "@$source" '<span data-usage-base>https://paste.bea.sh</span>/'
 end
 funcsave pastebin</code></pre>
-                <button type="button" data-copy-code class="btn btn-ghost btn-xs absolute top-2 right-2"><svg aria-hidden="true" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg><span>Copy</span></button>
-              </div>
-              </div>
-              <input type="radio" name="usage-shell" class="tab" aria-label="zsh" />
-              <div class="tab-content space-y-2 pt-3">
-                <p class="text-sm text-base-content/65">Add to <code class="font-mono">~/.zshrc</code>, then open a new terminal.</p>
-                <div class="relative">
-                <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>pastebin() {
+            <button type="button" data-copy-code class="bb-code-copy">Copy</button>
+          </div>
+        </div>
+        <div role="tabpanel" id="usage-panel-zsh" aria-labelledby="usage-tab-zsh" class="paste-tab-panel" hidden>
+          <p class="paste-muted">Add to <code class="paste-inline-code">~/.zshrc</code>, then open a new terminal.</p>
+          <div class="bb-code-block">
+            <pre class="bb-code"><code>pastebin() {
   curl -q -fsSL -w '\n' --data-binary "@${1:--}" '<span data-usage-base>https://paste.bea.sh</span>/'
 }</code></pre>
-                <button type="button" data-copy-code class="btn btn-ghost btn-xs absolute top-2 right-2"><svg aria-hidden="true" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg><span>Copy</span></button>
-              </div>
-              </div>
-              <input type="radio" name="usage-shell" class="tab" aria-label="bash" />
-              <div class="tab-content space-y-2 pt-3">
-                <p class="text-sm text-base-content/65">Add to <code class="font-mono">~/.bashrc</code>, then open a new terminal.</p>
-                <div class="relative">
-                <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>pastebin() {
+            <button type="button" data-copy-code class="bb-code-copy">Copy</button>
+          </div>
+        </div>
+        <div role="tabpanel" id="usage-panel-bash" aria-labelledby="usage-tab-bash" class="paste-tab-panel" hidden>
+          <p class="paste-muted">Add to <code class="paste-inline-code">~/.bashrc</code>, then open a new terminal.</p>
+          <div class="bb-code-block">
+            <pre class="bb-code"><code>pastebin() {
   curl -q -fsSL -w '\n' --data-binary "@${1:--}" '<span data-usage-base>https://paste.bea.sh</span>/'
 }</code></pre>
-                <button type="button" data-copy-code class="btn btn-ghost btn-xs absolute top-2 right-2"><svg aria-hidden="true" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg><span>Copy</span></button>
-              </div>
-              </div>
-              <input type="radio" name="usage-shell" class="tab" aria-label="Python" />
-              <div class="tab-content space-y-2 pt-3">
-                <p class="text-sm text-base-content/65">Standard library only; no packages to install.</p>
-                <div class="relative">
-                <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>import urllib.parse, urllib.request
+            <button type="button" data-copy-code class="bb-code-copy">Copy</button>
+          </div>
+        </div>
+        <div role="tabpanel" id="usage-panel-python" aria-labelledby="usage-tab-python" class="paste-tab-panel" hidden>
+          <p class="paste-muted">Standard library only; no packages to install.</p>
+          <div class="bb-code-block">
+            <pre class="bb-code"><code>import urllib.parse, urllib.request
 
 def paste(text, ttl=None, burn=False, lang="markup"):
     params = {"burn": str(burn).lower(), "lang": lang}
@@ -456,79 +430,67 @@ def paste(text, ttl=None, burn=False, lang="markup"):
         return response.read().decode().strip()
 
 print(paste("hello from Python", ttl=3600, lang="python"))</code></pre>
-                <button type="button" data-copy-code class="btn btn-ghost btn-xs absolute top-2 right-2"><svg aria-hidden="true" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg><span>Copy</span></button>
-              </div>
-              </div>
-            </div>
-          </section>
-          <section aria-labelledby="usage-options-title" class="space-y-3">
-            <h3 id="usage-options-title" class="text-lg font-semibold">Options</h3>
-            <div class="overflow-x-auto">
-              <table class="table table-sm">
-                <tbody class="[&_td:first-child]:font-mono [&_td:first-child]:whitespace-nowrap">
-                  <tr><td>ttl=&lt;seconds&gt;</td><td>Expire after this many seconds. <span class="font-mono">0</span> never expires.{{#if ui_expiry_default}} Default when <span class="font-mono">ttl</span> is omitted: {{ui_expiry_default}}.{{/if}}</td></tr>
-                  <tr><td>burn=true</td><td>Delete the paste after it is read once.</td></tr>
-                  <tr><td>lang=&lt;language&gt;</td><td>Syntax highlighting in the web view, such as <span class="font-mono">bash</span>, <span class="font-mono">python</span>, or <span class="font-mono">json</span>.</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="relative">
-                <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>$ cat deploy.log | curl -q -fsSL -w '\n' --data-binary @- \
+            <button type="button" data-copy-code class="bb-code-copy">Copy</button>
+          </div>
+        </div>
+      </section>
+      <section aria-labelledby="usage-options-title" class="paste-usage-section">
+        <h3 id="usage-options-title">Options</h3>
+        <div class="paste-table-wrap">
+          <table class="paste-table">
+            <tbody>
+              <tr><td class="paste-mono">ttl=&lt;seconds&gt;</td><td>Expire after this many seconds. <span class="paste-mono">0</span> never expires.{{#if ui_expiry_default}} Default when <span class="paste-mono">ttl</span> is omitted: {{ui_expiry_default}}.{{/if}}</td></tr>
+              <tr><td class="paste-mono">burn=true</td><td>Delete the paste after it is read once.</td></tr>
+              <tr><td class="paste-mono">lang=&lt;language&gt;</td><td>Syntax highlighting in the web view, such as <span class="paste-mono">bash</span>, <span class="paste-mono">python</span>, or <span class="paste-mono">json</span>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="bb-code-block">
+          <pre class="bb-code"><code>$ cat deploy.log | curl -q -fsSL -w '\n' --data-binary @- \
     '<span data-usage-base>https://paste.bea.sh</span>/?ttl=3600&amp;burn=true&amp;lang=bash'</code></pre>
-                <button type="button" data-copy-code class="btn btn-ghost btn-xs absolute top-2 right-2"><svg aria-hidden="true" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg><span>Copy</span></button>
-              </div>
-          </section>
-          <section aria-labelledby="usage-read-title" class="space-y-3">
-            <h3 id="usage-read-title" class="text-lg font-semibold">Read and delete</h3>
-            <div class="relative">
-                <pre class="rounded-box bg-base-200 p-4 pr-20 text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere"><code>$ curl -fsS '<span data-usage-base>https://paste.bea.sh</span>/raw/&lt;id&gt;'
+          <button type="button" data-copy-code class="bb-code-copy">Copy</button>
+        </div>
+      </section>
+      <section aria-labelledby="usage-read-title" class="paste-usage-section">
+        <h3 id="usage-read-title">Read and delete</h3>
+        <div class="bb-code-block">
+          <pre class="bb-code"><code>$ curl -fsS '<span data-usage-base>https://paste.bea.sh</span>/raw/&lt;id&gt;'
 $ curl -fsS -o paste.bin '<span data-usage-base>https://paste.bea.sh</span>/download/&lt;id&gt;'
 $ curl -fsS -X DELETE '<span data-usage-base>https://paste.bea.sh</span>/&lt;id&gt;'</code></pre>
-                <button type="button" data-copy-code class="btn btn-ghost btn-xs absolute top-2 right-2"><svg aria-hidden="true" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg><span>Copy</span></button>
-              </div>
-          </section>
-          <section aria-labelledby="usage-notes-title" class="space-y-2 text-sm leading-relaxed text-base-content/65">
-            <h3 id="usage-notes-title" class="text-lg font-semibold text-base-content">Notes</h3>
-            <p><code class="font-mono">-q</code> ignores <code class="font-mono">~/.curlrc</code>, <code class="font-mono">-f</code> fails on HTTP errors, <code class="font-mono">-sS</code> hides progress but keeps errors, and <code class="font-mono">-w '\n'</code> ends the link with a newline.</p>
-            <p>{{#if max_size_label}}Pastes are limited to {{max_size_label}}. {{/if}}Anyone with a paste link can read or delete it. Password encryption happens in the browser, so pastes sent from the command line are stored as plain text. The creating IP address is kept with each paste for abuse handling and is deleted with it.</p>
-          </section>
+          <button type="button" data-copy-code class="bb-code-copy">Copy</button>
         </div>
-        <div class="modal-action">
-          <form method="dialog"><button type="submit" class="btn">Close</button></form>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop"><button type="submit" aria-label="Close usage by clicking outside">Close</button></form>
+      </section>
+      <section aria-labelledby="usage-notes-title" class="paste-usage-section paste-muted">
+        <h3 id="usage-notes-title">Notes</h3>
+        <p><code class="paste-inline-code">-q</code> ignores <code class="paste-inline-code">~/.curlrc</code>, <code class="paste-inline-code">-f</code> fails on HTTP errors, <code class="paste-inline-code">-sS</code> hides progress but keeps errors, and <code class="paste-inline-code">-w '\n'</code> ends the link with a newline.</p>
+        <p>{{#if max_size_label}}Pastes are limited to {{max_size_label}}. {{/if}}Anyone with a paste link can read or delete it. Password encryption happens in the browser, so pastes sent from the command line are stored as plain text. The creating IP address is kept with each paste for abuse handling and is deleted with it.</p>
+      </section>
+      <form method="dialog" class="paste-dialog-actions"><button type="submit" class="bb-button bb-button--secondary bb-button--sm">Close</button></form>
     </dialog>
 
     {{#if is_encrypted}}
-    <dialog id="password-modal" class="modal" aria-labelledby="password-modal-label">
-      <div class="modal-box">
-        <h3 id="password-modal-label" class="text-lg font-semibold">This paste is encrypted</h3>
-        <p class="py-2 text-sm text-base-content/60">Enter its password to decrypt it in your browser.</p>
-        <form id="password-form" class="flex flex-col gap-3">
-          <div role="alert" id="modal-alert" class="alert alert-error alert-soft hidden">Could not decrypt data. Wrong password?</div>
-          <input type="password" id="modal-password" class="input w-full" placeholder="Password" aria-label="Password" autocomplete="current-password" />
-          <div class="modal-action mt-2">
-            <button type="button" class="btn" id="modal-close-btn">Close</button>
-            <button type="submit" class="btn btn-primary" id="decrypt-btn">Decrypt</button>
-          </div>
-        </form>
-      </div>
-      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    <dialog id="password-modal" class="paste-dialog" aria-labelledby="password-modal-label">
+      <h3 id="password-modal-label">This paste is encrypted</h3>
+      <p class="paste-muted">Enter its password to decrypt it in your browser.</p>
+      <form id="password-form" class="paste-dialog-form">
+        <div role="alert" id="modal-alert" class="paste-alert paste-alert--error" hidden>Could not decrypt data. Wrong password?</div>
+        <input type="password" id="modal-password" class="paste-input" placeholder="Password" aria-label="Password" autocomplete="current-password" />
+        <div class="paste-dialog-actions">
+          <button type="button" class="bb-button bb-button--secondary bb-button--sm" id="modal-close-btn">Close</button>
+          <button type="submit" class="bb-button bb-button--primary bb-button--sm" id="decrypt-btn">Decrypt</button>
+        </div>
+      </form>
     </dialog>
     {{/if}}
 
     {{#if is_created}}
-    <dialog id="deletion-modal" class="modal" aria-labelledby="deletion-modal-label">
-      <div class="modal-box max-w-sm">
-        <h3 id="deletion-modal-label" class="text-lg font-semibold">Delete this paste?</h3>
-        <p class="py-2 text-sm text-base-content/60">This cannot be undone.</p>
-        <div class="modal-action">
-          <form method="dialog"><button class="btn" id="deletion-modal-close-btn">Cancel</button></form>
-          <button type="button" class="btn btn-error" id="deletion-confirm-btn">Delete</button>
-        </div>
+    <dialog id="deletion-modal" class="paste-dialog paste-dialog--narrow" aria-labelledby="deletion-modal-label">
+      <h3 id="deletion-modal-label">Delete this paste?</h3>
+      <p class="paste-muted">This cannot be undone.</p>
+      <div class="paste-dialog-actions">
+        <form method="dialog"><button class="bb-button bb-button--secondary bb-button--sm" id="deletion-modal-close-btn">Cancel</button></form>
+        <button type="button" class="bb-button bb-button--sm paste-button--danger-solid" id="deletion-confirm-btn">Delete</button>
       </div>
-      <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
     {{/if}}
 

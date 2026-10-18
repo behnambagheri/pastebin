@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-product="blue">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,32 +8,34 @@
     <link rel="icon" href="/static/favicon.ico" />
     <script>
       (function () {
-        var preference = "system";
         try {
-          var saved = localStorage.getItem("paste-theme");
-          if (saved === "light" || saved === "dark") preference = saved;
+          var saved = localStorage.getItem("bb-theme");
+          if (saved === "light" || saved === "dark") document.documentElement.setAttribute("data-theme", saved);
         } catch (e) {}
-        var dark = preference === "dark" || (preference === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
-        document.documentElement.setAttribute("data-theme", dark ? "bea-dark" : "bea");
       })();
     </script>
-    <link href="__STYLE_URL__" rel="stylesheet" />
+    __STYLESHEETS__
   </head>
-  <body class="flex min-h-screen items-center justify-center bg-base-200 px-4 text-base-content">
-    <main class="card card-border w-full max-w-sm bg-base-100 shadow-sm">
-      <form method="post" action="/admin/login" class="card-body gap-4">
-        <div class="flex items-center gap-2">
-          <svg aria-hidden="true" class="size-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2" /><path d="M8 12h8M8 16h5" /></svg>
-          <h1 class="text-lg font-semibold">Paste admin</h1>
+  <body class="paste-signin">
+    <main class="bb-card paste-panel paste-signin-card">
+      <form method="post" action="/admin/login" class="paste-dialog-form">
+        <div class="paste-brand">
+          <a class="bb-brand" href="https://bea.sh" title="bea.sh — Behnam Bagheri">
+            <img class="bb-brand-mark" src="__MARK_URL__" width="36" height="36" alt="" />
+            <span>bea.sh</span>
+          </a>
+          <span class="paste-brand-divider" aria-hidden="true">/</span>
+          <span class="paste-brand-product">Paste</span>
         </div>
-        <p class="text-sm text-base-content/60">Sign in with the admin token configured for this server.</p>
+        <h1 class="paste-signin-title">Paste admin</h1>
+        <p class="paste-muted">Sign in with the admin token configured for this server.</p>
         __ERROR__
-        <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">Admin token</span>
-          <input name="token" type="password" required autofocus autocomplete="current-password" spellcheck="false" class="input w-full font-mono" />
+        <label class="paste-field">
+          <span class="paste-label">Admin token</span>
+          <input name="token" type="password" required autofocus autocomplete="current-password" spellcheck="false" class="paste-input paste-mono" />
         </label>
-        <button type="submit" class="btn btn-primary">Sign in</button>
-        <a href="/new" class="link link-hover text-center text-sm text-base-content/60">Back to Paste</a>
+        <button type="submit" class="bb-button bb-button--primary paste-signin-submit">Sign in</button>
+        <a href="/new" class="paste-signin-back">Back to Paste</a>
       </form>
     </main>
   </body>

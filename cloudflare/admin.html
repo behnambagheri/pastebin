@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-product="blue">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,138 +8,129 @@
     <link rel="icon" href="/static/favicon.ico" />
     <script>
       (function () {
-        var preference = "system";
         try {
-          var saved = localStorage.getItem("paste-theme");
-          if (saved === "light" || saved === "dark") preference = saved;
+          var saved = localStorage.getItem("bb-theme");
+          if (saved === "light" || saved === "dark") document.documentElement.setAttribute("data-theme", saved);
         } catch (e) {}
-        var dark = preference === "dark" || (preference === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
-        document.documentElement.setAttribute("data-theme", dark ? "bea-dark" : "bea");
       })();
     </script>
-    <link href="__STYLE_URL__" rel="stylesheet" />
+    __STYLESHEETS__
   </head>
-  <body class="flex min-h-screen flex-col bg-base-200 text-base-content">
-    <div class="mx-auto w-full max-w-6xl px-3 pt-3 sm:px-6">
-      <header class="rounded-box border border-base-300 bg-base-100/90 shadow-sm backdrop-blur">
-        <nav aria-label="Admin navigation" class="navbar flex-wrap gap-2 px-4 py-3 sm:px-6">
-          <div class="navbar-start w-auto grow gap-3">
-            <a href="/new" class="flex items-center gap-2" aria-label="Paste home">
-              <svg aria-hidden="true" class="size-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2" /><path d="M8 12h8M8 16h5" /></svg>
-              <span class="text-lg font-semibold tracking-tight">Paste</span>
-            </a>
-            <span class="badge badge-soft badge-primary">Admin</span>
-          </div>
-          <div class="navbar-end ml-auto w-auto gap-3">
-            <span id="session-email" class="hidden max-w-56 truncate text-sm text-base-content/60 sm:inline"></span>
-            <a id="sign-out" href="/cdn-cgi/access/logout" class="btn btn-ghost btn-sm">Sign out</a>
-          </div>
-        </nav>
-      </header>
-    </div>
+  <body>
+    <header class="bb-header">
+      <div class="paste-brand">
+        <a class="bb-brand" href="https://bea.sh" title="bea.sh — Behnam Bagheri">
+          <img class="bb-brand-mark" src="__MARK_URL__" width="36" height="36" alt="" />
+          <span>bea.sh</span>
+        </a>
+        <span class="paste-brand-divider" aria-hidden="true">/</span>
+        <a class="paste-brand-product" href="/new" aria-label="Paste home">Paste</a>
+        <span class="bb-badge bb-badge--accent paste-badge-sm">Admin</span>
+      </div>
+      <nav class="bb-nav" aria-label="Admin navigation">
+        <span id="session-email" class="paste-session" hidden></span>
+        <a id="sign-out" href="/cdn-cgi/access/logout" class="bb-nav-link">Sign out</a>
+        <button id="themeButton" type="button" class="bb-theme-toggle" aria-label="Switch theme" title="Switch theme">
+          <svg class="bb-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0-5a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 17a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1ZM3 11h1a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2Zm17 0h1a1 1 0 1 1 0 2h-1a1 1 0 1 1 0-2ZM5.64 4.22l.71.71a1 1 0 0 1-1.42 1.42l-.7-.71a1 1 0 0 1 1.41-1.42Zm12.02 12.02.71.71a1 1 0 0 1-1.42 1.41l-.7-.7a1 1 0 0 1 1.41-1.42ZM19.78 5.64l-.71.71a1 1 0 0 1-1.42-1.42l.71-.7a1 1 0 0 1 1.42 1.41ZM7.76 17.66l-.71.71a1 1 0 0 1-1.41-1.42l.7-.71a1 1 0 0 1 1.42 1.42Z" /></svg>
+          <svg class="bb-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.05 8.05 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Z" /></svg>
+        </button>
+      </nav>
+    </header>
 
-    <main class="mx-auto w-full max-w-6xl grow space-y-4 px-3 py-6 sm:px-6">
-      <div role="tablist" aria-label="Admin sections" class="tabs tabs-box w-fit bg-base-100">
-        <button type="button" role="tab" class="tab tab-active" data-tab="pastes" aria-selected="true">Pastes</button>
-        <button type="button" role="tab" class="tab" data-tab="stats" aria-selected="false">Statistics</button>
-        <button type="button" role="tab" class="tab" data-tab="settings" aria-selected="false">Settings</button>
+    <main class="bb-container paste-main">
+      <div role="tablist" aria-label="Admin sections" class="paste-tabs">
+        <button type="button" role="tab" class="bb-nav-link" data-tab="pastes" aria-selected="true">Pastes</button>
+        <button type="button" role="tab" class="bb-nav-link" data-tab="stats" aria-selected="false">Statistics</button>
+        <button type="button" role="tab" class="bb-nav-link" data-tab="settings" aria-selected="false">Settings</button>
       </div>
 
-      <div id="global-error" role="alert" class="alert alert-soft alert-error hidden"></div>
+      <div id="global-error" role="alert" class="paste-alert paste-alert--error" hidden></div>
 
       <!-- Pastes -->
-      <section id="panel-pastes" role="tabpanel" class="card card-border bg-base-100 shadow-sm">
-        <div class="card-body gap-4 p-4 sm:p-6">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <form id="search-form" class="join w-full sm:max-w-md">
-              <input id="search-input" type="search" class="input join-item w-full font-mono text-sm" placeholder="Paste ID prefix or creator IP" aria-label="Search pastes" autocomplete="off" spellcheck="false" />
-              <button type="submit" class="btn join-item">Search</button>
-            </form>
-            <div class="flex items-center gap-2">
-              <button id="delete-ip-btn" type="button" class="btn btn-sm btn-error btn-outline hidden">Delete all from this IP</button>
-              <span id="paste-count" class="text-sm text-base-content/60"></span>
-            </div>
+      <section id="panel-pastes" role="tabpanel" class="bb-card paste-panel">
+        <div class="paste-toolbar">
+          <form id="search-form" class="paste-search">
+            <input id="search-input" type="search" class="paste-input paste-mono" placeholder="Paste ID prefix or creator IP" aria-label="Search pastes" autocomplete="off" spellcheck="false" />
+            <button type="submit" class="bb-button bb-button--secondary bb-button--sm">Search</button>
+          </form>
+          <div class="paste-actions paste-actions--center">
+            <button id="delete-ip-btn" type="button" class="bb-button bb-button--secondary bb-button--sm paste-button--danger" hidden>Delete all from this IP</button>
+            <span id="paste-count" class="paste-muted paste-small"></span>
           </div>
-          <div class="overflow-x-auto rounded-field border border-base-300">
-            <table class="table table-sm">
-              <thead>
-                <tr><th>Paste</th><th>Created</th><th>Expires</th><th class="text-right">Size</th><th>Creator IP</th><th>Client</th><th><span class="sr-only">Actions</span></th></tr>
-              </thead>
-              <tbody id="paste-rows"></tbody>
-            </table>
-          </div>
-          <div class="flex items-center justify-between gap-3">
-            <span id="page-label" class="text-sm text-base-content/60"></span>
-            <div class="join">
-              <button id="prev-page" type="button" class="btn btn-sm join-item">Previous</button>
-              <button id="next-page" type="button" class="btn btn-sm join-item">Next</button>
-            </div>
+        </div>
+        <div class="paste-table-wrap">
+          <table class="paste-table">
+            <thead>
+              <tr><th>Paste</th><th>Created</th><th>Expires</th><th class="paste-end">Size</th><th>Creator IP</th><th>Client</th><th><span class="bb-visually-hidden">Actions</span></th></tr>
+            </thead>
+            <tbody id="paste-rows"></tbody>
+          </table>
+        </div>
+        <div class="paste-toolbar paste-toolbar--center">
+          <span id="page-label" class="paste-muted paste-small"></span>
+          <div class="paste-actions">
+            <button id="prev-page" type="button" class="bb-button bb-button--secondary bb-button--sm">Previous</button>
+            <button id="next-page" type="button" class="bb-button bb-button--secondary bb-button--sm">Next</button>
           </div>
         </div>
       </section>
 
       <!-- Statistics -->
-      <section id="panel-stats" role="tabpanel" class="hidden space-y-4">
-        <div class="stats stats-vertical w-full border border-base-300 bg-base-100 shadow-sm sm:stats-horizontal">
-          <div class="stat"><div class="stat-title">Active pastes</div><div id="stat-active" class="stat-value text-2xl">–</div><div class="stat-desc">Not expired</div></div>
-          <div class="stat"><div class="stat-title">Storage used</div><div id="stat-bytes" class="stat-value text-2xl">–</div><div class="stat-desc">Active paste content</div></div>
-          <div class="stat"><div class="stat-title">Creators</div><div id="stat-creators" class="stat-value text-2xl">–</div><div class="stat-desc">Distinct IPs with active pastes</div></div>
-          <div class="stat"><div class="stat-title">Created all time</div><div id="stat-all-time" class="stat-value text-2xl">–</div><div class="stat-desc">Since statistics began</div></div>
+      <section id="panel-stats" role="tabpanel" class="paste-stack" hidden>
+        <div class="bb-metric-grid paste-metrics">
+          <div><strong id="stat-active">–</strong><span>Active pastes</span><small>Not expired</small></div>
+          <div><strong id="stat-bytes">–</strong><span>Storage used</span><small>Active paste content</small></div>
+          <div><strong id="stat-creators">–</strong><span>Creators</span><small>Distinct IPs with active pastes</small></div>
+          <div><strong id="stat-all-time">–</strong><span>Created all time</span><small>Since statistics began</small></div>
         </div>
-        <div class="card card-border bg-base-100 shadow-sm">
-          <div class="card-body gap-4 p-4 sm:p-6">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 class="card-title">Pastes created per day</h2>
-              <select id="stats-days" class="select select-sm w-36" aria-label="Time range">
-                <option value="7">Last 7 days</option>
-                <option value="30" selected>Last 30 days</option>
-                <option value="90">Last 90 days</option>
-              </select>
-            </div>
-            <div class="flex gap-2">
-              <div id="chart-axis" class="flex h-48 flex-col justify-between text-right font-mono text-xs text-base-content/50" aria-hidden="true"></div>
-              <div class="relative h-48 grow border-b border-base-300">
-                <div id="chart-bars" class="absolute inset-0 flex items-end gap-0.5" role="img"></div>
-              </div>
-            </div>
-            <div class="flex justify-between pl-8 font-mono text-xs text-base-content/50"><span id="chart-start"></span><span id="chart-end"></span></div>
-            <p id="chart-tip" class="min-h-5 text-sm text-base-content/70" role="status">Hover or tap a bar for details.</p>
+        <div class="bb-card paste-panel">
+          <div class="paste-toolbar paste-toolbar--center">
+            <h2 class="paste-card-title">Pastes created per day</h2>
+            <select id="stats-days" class="paste-input paste-input--auto" aria-label="Time range">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
           </div>
-        </div>
-        <div class="grid gap-4 md:grid-cols-2">
-          <div class="card card-border bg-base-100 shadow-sm">
-            <div class="card-body gap-3 p-4 sm:p-6">
-              <h2 class="card-title">Top languages</h2>
-              <ul id="lang-list" class="space-y-2"></ul>
+          <div class="paste-chart">
+            <div id="chart-axis" class="paste-chart-axis" aria-hidden="true"></div>
+            <div class="paste-chart-plot">
+              <div id="chart-bars" class="paste-chart-bars" role="img"></div>
             </div>
           </div>
-          <div class="card card-border bg-base-100 shadow-sm">
-            <div class="card-body gap-3 p-4 sm:p-6">
-              <h2 class="card-title">How pastes are created</h2>
-              <ul id="client-list" class="space-y-2"></ul>
-              <p class="text-xs text-base-content/50">Web means the editor in a browser; command line covers curl, scripts, and other tools.</p>
-            </div>
+          <div class="paste-chart-range"><span id="chart-start"></span><span id="chart-end"></span></div>
+          <p id="chart-tip" class="paste-status" role="status">Hover or tap a bar for details.</p>
+        </div>
+        <div class="paste-grid-2">
+          <div class="bb-card paste-panel">
+            <h2 class="paste-card-title">Top languages</h2>
+            <ul id="lang-list" class="paste-shares"></ul>
+          </div>
+          <div class="bb-card paste-panel">
+            <h2 class="paste-card-title">How pastes are created</h2>
+            <ul id="client-list" class="paste-shares"></ul>
+            <p class="paste-muted paste-small">Web means the editor in a browser; command line covers curl, scripts, and other tools.</p>
           </div>
         </div>
       </section>
 
       <!-- Settings -->
-      <section id="panel-settings" role="tabpanel" class="card card-border hidden bg-base-100 shadow-sm">
-        <form id="settings-form" class="card-body gap-6 p-4 sm:p-6">
-          <div class="grid gap-6 md:grid-cols-2">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">Default expiry</legend>
-              <select id="set-default-ttl" class="select w-full"></select>
-              <p class="label">Used by the editor and when a request omits ttl.</p>
+      <section id="panel-settings" role="tabpanel" class="bb-card paste-panel" hidden>
+        <form id="settings-form" class="paste-settings">
+          <div class="paste-grid-2">
+            <fieldset class="paste-fieldset">
+              <legend class="paste-label">Default expiry</legend>
+              <select id="set-default-ttl" class="paste-input"></select>
+              <p class="paste-hint">Used by the editor and when a request omits ttl.</p>
             </fieldset>
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">Maximum expiry</legend>
-              <select id="set-max-ttl" class="select w-full"></select>
-              <p class="label">Longer or never-expiring requests are rejected.</p>
+            <fieldset class="paste-fieldset">
+              <legend class="paste-label">Maximum expiry</legend>
+              <select id="set-max-ttl" class="paste-input"></select>
+              <p class="paste-hint">Longer or never-expiring requests are rejected.</p>
             </fieldset>
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">Maximum paste size</legend>
-              <select id="set-max-bytes" class="select w-full">
+            <fieldset class="paste-fieldset">
+              <legend class="paste-label">Maximum paste size</legend>
+              <select id="set-max-bytes" class="paste-input">
                 <option value="65536">64 KiB</option>
                 <option value="262144">256 KiB</option>
                 <option value="1048576">1 MiB</option>
@@ -149,62 +140,60 @@
               </select>
             </fieldset>
           </div>
-          <div class="divider my-0"></div>
-          <div class="grid gap-6 md:grid-cols-2">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">Maintenance mode</legend>
-              <label class="label cursor-pointer gap-3 text-base-content">
-                <input id="set-maintenance" type="checkbox" class="toggle toggle-warning" />
+          <hr class="paste-divider" />
+          <div class="paste-grid-2">
+            <fieldset class="paste-fieldset">
+              <legend class="paste-label">Maintenance mode</legend>
+              <label class="paste-switch">
+                <input id="set-maintenance" type="checkbox" role="switch" />
                 Pause new pastes
               </label>
-              <input id="set-maintenance-message" type="text" maxlength="300" class="input w-full" placeholder="Message shown while paused" />
-              <p class="label">Existing pastes stay readable. Creating returns HTTP 503 with this message.</p>
+              <input id="set-maintenance-message" type="text" maxlength="300" class="paste-input" placeholder="Message shown while paused" />
+              <p class="paste-hint">Existing pastes stay readable. Creating returns HTTP 503 with this message.</p>
             </fieldset>
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">Announcement banner</legend>
-              <input id="set-banner" type="text" maxlength="300" class="input w-full" placeholder="Leave empty to hide" />
-              <select id="set-banner-level" class="select w-full">
+            <fieldset class="paste-fieldset">
+              <legend class="paste-label">Announcement banner</legend>
+              <input id="set-banner" type="text" maxlength="300" class="paste-input" placeholder="Leave empty to hide" />
+              <select id="set-banner-level" class="paste-input">
                 <option value="info">Info (blue)</option>
                 <option value="success">Success (green)</option>
                 <option value="warning">Warning (yellow)</option>
                 <option value="error">Error (red)</option>
               </select>
-              <p class="label">Shown at the top of the editor and paste pages.</p>
+              <p class="paste-hint">Shown at the top of the editor and paste pages.</p>
             </fieldset>
           </div>
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p id="settings-meta" class="text-sm text-base-content/60"></p>
-            <div class="flex items-center gap-3">
-              <span id="settings-status" role="status" class="text-sm"></span>
-              <button type="submit" class="btn btn-primary">Save settings</button>
+          <div class="paste-toolbar paste-toolbar--center">
+            <p id="settings-meta" class="paste-muted paste-small"></p>
+            <div class="paste-actions paste-actions--center">
+              <span id="settings-status" role="status" class="paste-small"></span>
+              <button type="submit" class="bb-button bb-button--primary bb-button--sm">Save settings</button>
             </div>
           </div>
         </form>
       </section>
     </main>
 
-    <dialog id="preview-dialog" class="modal" aria-labelledby="preview-title">
-      <div class="modal-box flex max-h-[85dvh] w-full max-w-4xl flex-col gap-3">
-        <div class="flex items-center justify-between gap-3">
-          <h3 id="preview-title" class="truncate font-mono text-base font-semibold"></h3>
-          <form method="dialog"><button class="btn btn-ghost btn-sm btn-square" aria-label="Close preview">✕</button></form>
-        </div>
-        <p id="preview-meta" class="text-xs text-base-content/60"></p>
-        <pre class="min-h-0 grow overflow-auto rounded-box bg-base-200 p-4 text-sm"><code id="preview-body"></code></pre>
+    <dialog id="preview-dialog" class="paste-dialog paste-dialog--wide" aria-labelledby="preview-title">
+      <div class="paste-dialog-head">
+        <h3 id="preview-title" class="paste-mono paste-truncate"></h3>
+        <form method="dialog">
+          <button class="bb-button bb-button--ghost bb-button--sm paste-icon-button" aria-label="Close preview">
+            <svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="m6 6 12 12M6 18 18 6" /></svg>
+          </button>
+        </form>
       </div>
-      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+      <p id="preview-meta" class="paste-muted paste-small"></p>
+      <pre class="bb-code paste-preview"><code id="preview-body"></code></pre>
     </dialog>
 
-    <dialog id="confirm-dialog" class="modal" aria-labelledby="confirm-title">
-      <div class="modal-box max-w-sm">
-        <h3 id="confirm-title" class="text-lg font-semibold"></h3>
-        <p id="confirm-text" class="py-2 text-sm text-base-content/60"></p>
-        <div class="modal-action">
-          <form method="dialog"><button class="btn" value="cancel">Cancel</button></form>
-          <button id="confirm-ok" type="button" class="btn btn-error">Delete</button>
-        </div>
+    <dialog id="confirm-dialog" class="paste-dialog paste-dialog--narrow" aria-labelledby="confirm-title">
+      <h3 id="confirm-title"></h3>
+      <p id="confirm-text" class="paste-muted"></p>
+      <div class="paste-dialog-actions">
+        <form method="dialog"><button class="bb-button bb-button--secondary bb-button--sm" value="cancel">Cancel</button></form>
+        <button id="confirm-ok" type="button" class="bb-button bb-button--sm paste-button--danger-solid">Delete</button>
       </div>
-      <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
 
     <script>
@@ -235,7 +224,7 @@
         function showError(message) {
           var box = $("global-error");
           box.textContent = message;
-          box.classList.toggle("hidden", !message);
+          box.hidden = !message;
         }
         function api(path, options) {
           options = options || {};
@@ -261,9 +250,8 @@
         function selectTab(name) {
           document.querySelectorAll("[data-tab]").forEach(function (tab) {
             var active = tab.getAttribute("data-tab") === name;
-            tab.classList.toggle("tab-active", active);
             tab.setAttribute("aria-selected", String(active));
-            $("panel-" + tab.getAttribute("data-tab")).classList.toggle("hidden", !active);
+            $("panel-" + tab.getAttribute("data-tab")).hidden = !active;
           });
           showError("");
           if (name === "stats") loadStats();
@@ -288,11 +276,11 @@
         }
         // Icon-only buttons keep the table narrow; the label is exposed to screen readers and as a tooltip.
         function iconButton(name, label, extra) {
-          var button = el("button", "btn btn-ghost btn-xs btn-square " + extra);
+          var button = el("button", "bb-button bb-button--ghost bb-button--sm paste-icon-button " + extra);
           button.type = "button";
           button.title = label;
           button.setAttribute("aria-label", label);
-          button.innerHTML = '<svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></svg>';
+          button.innerHTML = '<svg aria-hidden="true" class="paste-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></svg>';
           setIcon(button, name);
           return button;
         }
@@ -300,14 +288,14 @@
           var original = button.title;
           setIcon(button, name);
           button.title = label;
-          button.classList.add(name === "check" ? "text-success" : "text-error");
+          button.classList.add(name === "check" ? "paste-text-success" : "paste-text-danger");
           setTimeout(function () {
             setIcon(button, "copy");
             button.title = original;
-            button.classList.remove("text-success", "text-error");
+            button.classList.remove("paste-text-success", "paste-text-danger");
           }, 1200);
         }
-        function badge(text, cls) { return el("span", "badge badge-sm " + cls, text); }
+        function badge(text, cls) { return el("span", "bb-badge paste-badge-sm " + cls, text); }
         function renderPastes(data) {
           state.total = data.total;
           state.pageSize = data.page_size;
@@ -315,14 +303,14 @@
           rows.replaceChildren();
           if (!data.pastes.length) {
             var empty = el("tr");
-            var cell = el("td", "py-8 text-center text-base-content/60", state.query ? "No pastes match this search." : "No active pastes.");
+            var cell = el("td", "paste-table-empty", state.query ? "No pastes match this search." : "No active pastes.");
             cell.colSpan = 7;
             empty.appendChild(cell);
             rows.appendChild(empty);
           }
           data.pastes.forEach(function (paste) {
             // The whole row opens the preview; buttons inside it keep their own actions.
-            var row = el("tr", "cursor-pointer hover:bg-base-200/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary");
+            var row = el("tr", "paste-row");
             row.tabIndex = 0;
             row.title = "Preview this paste";
             row.addEventListener("click", function (event) {
@@ -335,21 +323,21 @@
               }
             });
             var idCell = el("td");
-            var idLine = el("div", "flex flex-wrap items-center gap-1.5");
-            idLine.appendChild(el("span", "font-mono text-xs", paste.id));
-            idLine.appendChild(badge(paste.lang, "badge-ghost"));
-            if (paste.burn) idLine.appendChild(badge("burn", "badge-warning badge-soft"));
-            if (paste.encrypted) idLine.appendChild(badge("encrypted", "badge-info badge-soft"));
+            var idLine = el("div", "paste-cell-line");
+            idLine.appendChild(el("span", "paste-mono paste-small", paste.id));
+            idLine.appendChild(badge(paste.lang, "bb-badge--neutral"));
+            if (paste.burn) idLine.appendChild(badge("burn", "bb-badge--request"));
+            if (paste.encrypted) idLine.appendChild(badge("encrypted", "bb-badge--accent"));
             idCell.appendChild(idLine);
             row.appendChild(idCell);
-            row.appendChild(el("td", "whitespace-nowrap text-xs", when(paste.created_at)));
-            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.expires_at ? when(paste.expires_at) : "Never"));
-            row.appendChild(el("td", "whitespace-nowrap text-right font-mono text-xs", bytes(paste.size)));
+            row.appendChild(el("td", "paste-cell-meta", when(paste.created_at)));
+            row.appendChild(el("td", "paste-cell-meta", paste.expires_at ? when(paste.expires_at) : "Never"));
+            row.appendChild(el("td", "paste-cell-meta paste-mono paste-end", bytes(paste.size)));
             // IPv6 addresses wrap inside a fixed width instead of widening the table.
-            var ipCell = el("td", "w-44 max-w-44");
+            var ipCell = el("td", "paste-cell-ip");
             if (paste.creator_ip) {
-              var ipLine = el("div", "flex flex-wrap items-baseline gap-x-1.5");
-              var ipButton = el("button", "link link-hover text-left font-mono text-xs");
+              var ipLine = el("div", "paste-cell-line");
+              var ipButton = el("button", "paste-link-button paste-mono paste-small");
               // Allow line breaks only after colons so IPv6 groups stay whole.
               paste.creator_ip.split(":").forEach(function (part, index, parts) {
                 ipButton.append(part + (index < parts.length - 1 ? ":" : ""));
@@ -359,14 +347,14 @@
               ipButton.title = "Show all pastes from this IP";
               ipButton.addEventListener("click", function () { search(paste.creator_ip); });
               ipLine.appendChild(ipButton);
-              if (paste.country) ipLine.appendChild(el("span", "text-xs text-base-content/50", paste.country));
+              if (paste.country) ipLine.appendChild(el("span", "paste-muted paste-small", paste.country));
               ipCell.appendChild(ipLine);
             } else {
-              ipCell.appendChild(el("span", "text-xs text-base-content/40", "Not recorded"));
+              ipCell.appendChild(el("span", "paste-muted paste-small", "Not recorded"));
             }
             row.appendChild(ipCell);
-            row.appendChild(el("td", "whitespace-nowrap text-xs", paste.client === "web" ? "Web" : paste.client === "cli" ? "CLI" : paste.client === "agent" ? "Agent" : "—"));
-            var actions = el("td", "whitespace-nowrap text-right");
+            row.appendChild(el("td", "paste-cell-meta", paste.client === "web" ? "Web" : paste.client === "cli" ? "CLI" : paste.client === "agent" ? "Agent" : "—"));
+            var actions = el("td", "paste-cell-actions");
             var link = location.origin + "/" + paste.id;
             var copy = iconButton("copy", "Copy link", "");
             copy.addEventListener("click", function () {
@@ -376,7 +364,7 @@
                 flash(copy, "x", "Copy failed");
               });
             });
-            var remove = iconButton("trash", "Delete paste", "text-error");
+            var remove = iconButton("trash", "Delete paste", "paste-text-danger");
             remove.addEventListener("click", function () {
               confirmAction("Delete this paste?", paste.id + " will be removed permanently.", function () {
                 return api("/admin/api/pastes/" + encodeURIComponent(paste.id), { method: "DELETE" }).then(loadPastes);
@@ -392,7 +380,7 @@
           $("prev-page").disabled = data.page <= 1;
           $("next-page").disabled = data.page >= pages;
           var isIp = /[.:]/.test(state.query);
-          $("delete-ip-btn").classList.toggle("hidden", !(isIp && data.total > 0));
+          $("delete-ip-btn").hidden = !(isIp && data.total > 0);
         }
         function search(query) {
           $("search-input").value = query;
@@ -474,11 +462,11 @@
           var total = 0;
           data.series.forEach(function (d) {
             total += d.pastes;
-            var slot = el("button", "group flex h-full min-w-0 flex-1 items-end focus:outline-none");
+            var slot = el("button", "paste-chart-slot");
             slot.type = "button";
             var label = formatDay(d.day) + ": " + number.format(d.pastes) + (d.pastes === 1 ? " paste" : " pastes") + ", " + bytes(d.bytes);
             slot.setAttribute("aria-label", label);
-            var bar = el("span", "block w-full rounded-t-sm bg-primary transition-opacity group-hover:opacity-80 group-focus-visible:outline-2 group-focus-visible:outline-primary");
+            var bar = el("span", "paste-chart-bar");
             bar.style.height = d.pastes ? Math.max(2, (d.pastes / max) * 100) + "%" : "0";
             slot.appendChild(bar);
             var show = function () { $("chart-tip").textContent = label; };
@@ -502,14 +490,14 @@
         function renderShares(list, rows, emptyText) {
           list.replaceChildren();
           var sum = rows.reduce(function (s, r) { return s + r[1]; }, 0);
-          if (!sum) { list.appendChild(el("li", "text-sm text-base-content/60", emptyText)); return; }
+          if (!sum) { list.appendChild(el("li", "paste-muted paste-small", emptyText)); return; }
           var top = Math.max.apply(null, rows.map(function (r) { return r[1]; }));
           rows.forEach(function (r) {
-            var item = el("li", "space-y-1");
-            var line = el("div", "flex justify-between gap-3 text-sm");
-            line.append(el("span", "font-mono", r[0]), el("span", "text-base-content/70", r[1] + " · " + Math.round((r[1] / sum) * 100) + "%"));
-            var track = el("div", "h-1.5 w-full rounded-full bg-base-200");
-            var fill = el("div", "h-full rounded-full bg-primary");
+            var item = el("li", "paste-share");
+            var line = el("div", "paste-share-line");
+            line.append(el("span", "paste-mono", r[0]), el("span", "paste-muted", r[1] + " · " + Math.round((r[1] / sum) * 100) + "%"));
+            var track = el("div", "paste-share-track");
+            var fill = el("div", "paste-share-fill");
             fill.style.width = (r[1] / top) * 100 + "%";
             track.appendChild(fill);
             item.append(line, track);
@@ -558,7 +546,7 @@
         $("settings-form").addEventListener("submit", function (event) {
           event.preventDefault();
           var status = $("settings-status");
-          status.className = "text-sm text-base-content/60";
+          status.className = "paste-small paste-muted";
           status.textContent = "Saving…";
           api("/admin/api/settings", { method: "PUT", json: {
             default_ttl: Number($("set-default-ttl").value),
@@ -570,11 +558,46 @@
             banner_level: $("set-banner-level").value,
           } }).then(function (data) {
             renderSettings(data);
-            status.className = "text-sm text-success";
+            status.className = "paste-small paste-text-success";
             status.textContent = "Saved. Live within about 10 seconds.";
           }).catch(function (e) {
-            status.className = "text-sm text-error";
+            status.className = "paste-small paste-text-danger";
             status.textContent = e.message;
+          });
+        });
+
+        // ── Theme: follows the OS until a pick; "bb-theme" is shared with bea.sh ──
+        (function () {
+          var button = $("themeButton");
+          var system = window.matchMedia("(prefers-color-scheme: dark)");
+          var picked = null;
+          try { picked = localStorage.getItem("bb-theme"); } catch (e) {}
+          if (picked !== "light" && picked !== "dark") picked = null;
+          function current() { return picked || (system.matches ? "dark" : "light"); }
+          function apply() {
+            var theme = current();
+            if (picked) document.documentElement.setAttribute("data-theme", theme);
+            else document.documentElement.removeAttribute("data-theme");
+            var label = "Theme: " + theme + ". Switch to " + (theme === "dark" ? "light" : "dark");
+            button.setAttribute("data-current", theme);
+            button.setAttribute("aria-label", label);
+            button.title = label;
+          }
+          button.addEventListener("click", function () {
+            picked = current() === "dark" ? "light" : "dark";
+            try { localStorage.setItem("bb-theme", picked); } catch (e) {}
+            apply();
+          });
+          system.addEventListener("change", apply);
+          apply();
+        })();
+
+        // Dialogs close when the backdrop outside them is clicked.
+        document.querySelectorAll("dialog").forEach(function (dialog) {
+          dialog.addEventListener("click", function (event) {
+            var box = dialog.getBoundingClientRect();
+            var inside = event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+            if (event.target === dialog && !inside) dialog.close();
           });
         });
 
@@ -583,6 +606,7 @@
           var node = $("session-email");
           node.textContent = data.method === "token" ? "Signed in with admin token" : data.email;
           node.title = node.textContent;
+          node.hidden = false;
           if (data.method === "token") {
             // Token sessions end on this server; Cloudflare Access sessions end at Access.
             $("sign-out").addEventListener("click", function (event) {

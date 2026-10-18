@@ -15,10 +15,16 @@ Rust/RocksDB server and Docker builds remain available and share the same
 `static/` frontend. Handlebars templates are precompiled at build time; the
 Worker embeds the static assets, like the Rust binary does.
 
-The UI uses daisyUI 5 on Tailwind CSS 4 with the shared `bea` / `bea-dark`
-themes from ip.bea.sh, so it matches bea.sh. `style.css` here is the Tailwind
-source; `npm run build:css` (also part of `npm run build`) compiles it to
-`static/style.css`, which is committed so the Rust build needs no Node.js.
+The UI uses the Behnam Bagheri Design System shared by bea.sh and Behnam's
+other sites (blue accent, `data-product="blue"`). `static/ds/` is a vendored copy
+of `ds/v1/` from the bea.sh repository, including its fonts, so the Iran mirror
+works when bea.sh is unreachable; `scripts/sync-ds.sh` refreshes it and records
+the source commit in `static/ds/VERSION`. Never edit those files: page rules go in
+`static/style.css` (plain CSS with `--bb-` tokens, no build step), and missing
+components go upstream to bea.sh. Pages load `tokens.css`, `base.css`,
+`components.css`, then the site stylesheet, each with a content-hashed `?v=`.
+The theme follows the OS until the visitor picks one with the toggle, which is
+stored under `bb-theme` like on bea.sh.
 There are no CDN dependencies: no Bootstrap, jQuery, or Font Awesome.
 
 D1 holds paste metadata and base64 content chunks. Chunking preserves the

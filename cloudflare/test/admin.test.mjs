@@ -53,7 +53,10 @@ test("the admin page is private and does not allow framing", async () => {
   const page = await call("/admin");
   assert.equal(page.status, 200);
   assert.match(page.headers.get("content-security-policy"), /frame-ancestors 'none'/);
-  assert.match(await page.text(), /href="\/static\/style\.css\?v=[0-9a-f]{12}"/);
+  const html = await page.text();
+  assert.match(html, /href="\/static\/ds\/v1\/tokens\.css\?v=[0-9a-f]{12}"/);
+  assert.match(html, /href="\/static\/style\.css\?v=[0-9a-f]{12}"/);
+  assert.match(page.headers.get("content-security-policy"), /font-src 'self'/);
 });
 
 test("paste list hides expired pastes and searches by ID prefix or creator IP", async () => {

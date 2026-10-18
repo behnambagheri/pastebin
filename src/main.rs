@@ -1,6 +1,7 @@
 use std::io;
 use std::io::Cursor;
 use std::net::IpAddr;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use rocket::config::{Config, LogLevel};
@@ -425,16 +426,18 @@ async fn get_binary(id: &str, state: &State<DB>) -> CustomResponse<'static> {
     )
 }
 
-#[get("/static/<resource>")]
+// Nested paths serve the vendored design system under /static/ds/.
+#[get("/static/<resource..>")]
 async fn get_static<'r>(
-    resource: &'r str,
+    resource: PathBuf,
     handlebars: &'r State<Handlebars<'static>>,
     plugin_manager: &'r State<PluginManager>,
     cfg: &'r State<PastebinConfig>,
 ) -> CustomResponse<'r> {
     let resources = plugin_manager.static_resources();
+    let resource = resource.to_string_lossy().replace('\\', "/");
     let pth = format!("/static/{resource}");
-    let ext = get_extension(resource).trim_start_matches('.').to_string();
+    let ext = get_extension(&resource).trim_start_matches('.').to_string();
 
     let content = match resources.get(pth.as_str()) {
         Some(data) => *data,
@@ -721,6 +724,20 @@ mod tests {
         assert_eq!(get_paste(&client, &id).status(), Status::Ok);
         thread::sleep(time::Duration::from_secs(1));
         assert_eq!(get_paste(&client, &id).status(), Status::NotFound);
+    }
+
+    #[test]
+    fn design_system_stylesheets_are_served() {
+        let (client, _tmp) = create_client();
+        let page = client.get("/new").dispatch().into_string().unwrap();
+        for path in ["/static/ds/v1/tokens.css", "/static/ds/v1/base.css", "/static/ds/v1/components.css"] {
+            assert!(page.contains(path), "{path} is not linked from the editor");
+            let response = client.get(path).dispatch();
+            assert_eq!(response.status(), Status::Ok);
+            assert_eq!(response.content_type(), Some(ContentType::CSS));
+        }
+        let font = client.get("/static/ds/v1/fonts/space-grotesk/SpaceGrotesk-latin.woff2").dispatch();
+        assert_eq!(font.status(), Status::Ok);
     }
 
     #[test]

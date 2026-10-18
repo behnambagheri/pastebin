@@ -68,41 +68,82 @@ async function cryptoDecrypt(ciphertextB64, password) {
         return path + (path.indexOf("?") >= 0 ? "&" : "?") + query;
     }
 
-    // ── Theme: system / light / dark, shared with the bea.sh family ──────────
+    // ── Theme: follows the OS until the visitor picks light or dark ──────────
+    // Same behavior and storage key ("bb-theme") as bea.sh and the design system.
     function initTheme() {
+        var THEME_KEY = "bb-theme";
         var root = document.documentElement;
+        var button = byId("themeButton");
         var system = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
-        var buttons = document.querySelectorAll("button[data-theme-preference]");
-        var preference = root.getAttribute("data-theme-preference") || "system";
+        if (!button) return;
+
+        function saved() {
+            try {
+                var theme = localStorage.getItem(THEME_KEY);
+                return theme === "light" || theme === "dark" ? theme : null;
+            } catch (e) {
+                return null;
+            }
+        }
+        var picked = saved();
+        function current() { return picked || (system && system.matches ? "dark" : "light"); }
 
         function apply() {
-            var dark = preference === "dark" || (preference === "system" && system && system.matches);
-            root.setAttribute("data-theme", dark ? "bea-dark" : "bea");
-            root.setAttribute("data-theme-preference", preference);
-            buttons.forEach(function (button) {
-                var selected = button.getAttribute("data-theme-preference") === preference;
-                button.setAttribute("aria-pressed", String(selected));
-                button.classList.toggle("btn-active", selected);
-            });
+            var theme = current();
+            if (picked) root.setAttribute("data-theme", theme);
+            else root.removeAttribute("data-theme");
+            // The icon shows the theme on screen; clicking switches to the other one.
+            var label = "Theme: " + theme + ". Switch to " + (theme === "dark" ? "light" : "dark");
+            button.setAttribute("data-current", theme);
+            button.setAttribute("aria-label", label);
+            button.title = label;
         }
 
-        buttons.forEach(function (button) {
-            button.addEventListener("click", function () {
-                preference = button.getAttribute("data-theme-preference");
-                try {
-                    localStorage.setItem("paste-theme", preference);
-                } catch (e) {
-                    // The theme still applies to this page when storage is unavailable.
-                }
-                apply();
-            });
+        button.addEventListener("click", function () {
+            picked = current() === "dark" ? "light" : "dark";
+            try {
+                localStorage.setItem(THEME_KEY, picked);
+            } catch (e) {
+                // The theme still applies to this page when storage is unavailable.
+            }
+            apply();
         });
-        if (system) {
-            system.addEventListener("change", function () {
-                if (preference === "system") apply();
+        if (system) system.addEventListener("change", apply);
+        apply();
+    }
+
+    // Dialogs close when the backdrop outside them is clicked.
+    function closeOnBackdrop(dialog) {
+        dialog.addEventListener("click", function (event) {
+            var box = dialog.getBoundingClientRect();
+            var inside = event.clientX >= box.left && event.clientX <= box.right &&
+                event.clientY >= box.top && event.clientY <= box.bottom;
+            if (event.target === dialog && !inside) dialog.close();
+        });
+    }
+
+    // Usage tabs: arrow keys move between tabs, like a native tab list.
+    function initTabs(list) {
+        var tabs = Array.prototype.slice.call(list.querySelectorAll("[role=tab]"));
+        function select(tab) {
+            tabs.forEach(function (other) {
+                var selected = other === tab;
+                other.setAttribute("aria-selected", String(selected));
+                other.tabIndex = selected ? 0 : -1;
+                byId(other.getAttribute("aria-controls")).hidden = !selected;
             });
         }
-        apply();
+        tabs.forEach(function (tab, index) {
+            tab.addEventListener("click", function () { select(tab); });
+            tab.addEventListener("keydown", function (event) {
+                var step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+                if (!step) return;
+                event.preventDefault();
+                var next = tabs[(index + step + tabs.length) % tabs.length];
+                select(next);
+                next.focus();
+            });
+        });
     }
 
     // ── Usage dialog ─────────────────────────────────────────────────────────
@@ -119,9 +160,11 @@ async function cryptoDecrypt(ciphertextB64, password) {
             button.addEventListener("click", function () { dialog.showModal(); });
         });
         if (window.location.hash === "#usage") dialog.showModal();
+        closeOnBackdrop(dialog);
+        dialog.querySelectorAll("[role=tablist]").forEach(initTabs);
 
         dialog.querySelectorAll("[data-copy-code]").forEach(function (button) {
-            var label = button.querySelector("span");
+            var label = button;
             button.addEventListener("click", function () {
                 // Drop the "$ " prompts and sample output so copied commands run as-is.
                 var lines = button.parentElement.querySelector("code").textContent.split("\n");
@@ -220,6 +263,7 @@ async function cryptoDecrypt(ciphertextB64, password) {
         var deletionModal = byId("deletion-modal");
         var removeButton = byId("remove-btn");
         if (removeButton && deletionModal) {
+            closeOnBackdrop(deletionModal);
             removeButton.addEventListener("click", function () { deletionModal.showModal(); });
             byId("deletion-confirm-btn").addEventListener("click", function () {
                 var confirmButton = this;
@@ -300,6 +344,7 @@ async function cryptoDecrypt(ciphertextB64, password) {
         if (passwordModal) {
             var modalAlert = byId("modal-alert");
             var modalPassword = byId("modal-password");
+            closeOnBackdrop(passwordModal);
             passwordModal.showModal();
             modalPassword.focus();
 
@@ -315,10 +360,10 @@ async function cryptoDecrypt(ciphertextB64, password) {
                     } else {
                         textarea.value = decrypted;
                     }
-                    modalAlert.classList.add("hidden");
+                    modalAlert.hidden = true;
                     passwordModal.close();
                 }).catch(function () {
-                    modalAlert.classList.remove("hidden");
+                    modalAlert.hidden = false;
                     modalPassword.select();
                 });
             });
